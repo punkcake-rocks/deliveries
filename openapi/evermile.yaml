@@ -1,0 +1,4710 @@
+openapi: 3.0.2
+info:
+  contact:
+    email: support@evermile.io
+    name: API Support
+    url: https://www.evermile.io/support
+  description: This is Evermile's commercial API for handling delivery quotes and
+    orders
+  license:
+    name: All rights reserved Evermile.io
+    url: https://www.evermile.io/terms
+  termsOfService: https://www.evermile.io/terms
+  title: Evermile Commercial Quotes and Booking API
+  version: "1.0"
+servers:
+- url: "https://api.{api-subdomain}.evermile.io/v1/commercial"
+  variables:
+    api-subdomain:
+      default: prod
+      description: The stage subdomain
+      enum:
+      - prod
+      - sandbox
+security:
+- Sandbox:
+  - read
+  - order
+- Prod:
+  - read
+  - order
+paths:
+  /quote:
+    parameters:
+    - description: "The merchant ID, if using a client credentials token. Will be\
+        \ ignored with a regular user token."
+      in: header
+      name: X-EVERMILE-MERCHANT-ID
+      required: false
+      schema:
+        format: uuid
+        type: string
+    - description: A trace ID for tracing the request through the Evermile platform
+      in: header
+      name: X-EVERMILE-TRACE-ID
+      required: false
+      schema:
+        type: string
+    - description: A store ID for an order's store platform context
+      in: header
+      name: X-EVERMILE-STORE-ID
+      required: false
+      schema:
+        type: string
+    post:
+      description: Get proposals for a quote on a delivery order
+      parameters:
+      - description: "The merchant ID, if using a client credentials token. Will be\
+          \ ignored with a regular user token."
+        in: header
+        name: X-EVERMILE-MERCHANT-ID
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: A trace ID for tracing the request through the Evermile platform
+        in: header
+        name: X-EVERMILE-TRACE-ID
+        required: false
+        schema:
+          type: string
+      - description: A store ID for an order's store platform context
+        in: header
+        name: X-EVERMILE-STORE-ID
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/quoteReq'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/quoteResponse'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                example: Invalid request
+                type: string
+          description: Invalid request body
+        "401":
+          content:
+            application/json:
+              schema:
+                example: Unauthorized
+                type: string
+          description: Unauthorized access
+        "409":
+          content:
+            application/json:
+              schema:
+                example: Too many requests
+                type: string
+          description: Rate limit exceeded
+      summary: Get a quote
+      tags:
+      - Quotes
+  /proposal/{proposalId}:
+    get:
+      description: Retrieve a proposal that was previously returned for a quote by
+        its proposal ID
+      parameters:
+      - description: "The merchant ID, if using a client credentials token. Will be\
+          \ ignored with a regular user token."
+        in: header
+        name: X-EVERMILE-MERCHANT-ID
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: A trace ID for tracing the request through the Evermile platform
+        in: header
+        name: X-EVERMILE-TRACE-ID
+        required: false
+        schema:
+          type: string
+      - description: The ID of the proposal
+        in: path
+        name: proposalId
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/proposalResponse'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                example: Invalid request
+                type: string
+          description: Invalid request body
+        "401":
+          content:
+            application/json:
+              schema:
+                example: Unauthorized
+                type: string
+          description: Unauthorized access
+        "409":
+          content:
+            application/json:
+              schema:
+                example: Too many requests
+                type: string
+          description: Rate limit exceeded
+      summary: Retrieve a proposal
+      tags:
+      - Quotes
+    parameters:
+    - description: "The merchant ID, if using a client credentials token. Will be\
+        \ ignored with a regular user token."
+      in: header
+      name: X-EVERMILE-MERCHANT-ID
+      required: false
+      schema:
+        format: uuid
+        type: string
+    - description: A trace ID for tracing the request through the Evermile platform
+      in: header
+      name: X-EVERMILE-TRACE-ID
+      required: false
+      schema:
+        type: string
+    - description: The ID of the proposal
+      in: path
+      name: proposalId
+      required: true
+      schema:
+        format: uuid
+        type: string
+  /order:
+    parameters:
+    - description: "The merchant ID, if using a client credentials token. Will be\
+        \ ignored with a regular user token."
+      in: header
+      name: X-EVERMILE-MERCHANT-ID
+      required: false
+      schema:
+        format: uuid
+        type: string
+    - description: A trace ID for tracing the request through the Evermile platform
+      in: header
+      name: X-EVERMILE-TRACE-ID
+      required: false
+      schema:
+        type: string
+    - description: A store ID for an order's store platform context
+      in: header
+      name: X-EVERMILE-STORE-ID
+      required: false
+      schema:
+        type: string
+    post:
+      description: "Order a delivery based on a quote.<br>***If there already exists\
+        \ an order with the given proposal ID, that order will be returned (and a\
+        \ new one will NOT be created)***"
+      parameters:
+      - description: A token to confirm cancellation after receiving 402 code
+        in: header
+        name: x-evermile-token
+        required: false
+        schema:
+          type: string
+      - description: "The merchant ID, if using a client credentials token. Will be\
+          \ ignored with a regular user token."
+        in: header
+        name: X-EVERMILE-MERCHANT-ID
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: A trace ID for tracing the request through the Evermile platform
+        in: header
+        name: X-EVERMILE-TRACE-ID
+        required: false
+        schema:
+          type: string
+      - description: A store ID for an order's store platform context
+        in: header
+        name: X-EVERMILE-STORE-ID
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/orderRequest'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/orderDetails'
+          description: Order created
+        "400":
+          content:
+            application/json:
+              schema:
+                example: Invalid request
+                type: string
+          description: Invalid request body
+        "401":
+          content:
+            application/json:
+              schema:
+                example: Unauthorized
+                type: string
+          description: Unauthorized access
+        "404":
+          content:
+            application/json:
+              schema:
+                example: Could not find order
+                type: string
+          description: The specified resource was not found
+        "409":
+          content:
+            application/json:
+              schema:
+                example: Too many requests
+                type: string
+          description: Rate limit exceeded
+      summary: Order a delivery
+      tags:
+      - Orders
+  /orders:
+    get:
+      description: Get the list of orders for a timeframe
+      parameters:
+      - description: The start date to query (YYYY-MM-DD). Default is today.
+        example: 2022-03-20
+        in: query
+        name: from
+        required: false
+        schema:
+          format: date
+          type: string
+      - description: The end date to query (YYYY-MM-DD). Default is today.
+        example: 2022-03-21
+        in: query
+        name: to
+        required: false
+        schema:
+          format: date
+          type: string
+      - description: "The merchant ID, if using a client credentials token. Will be\
+          \ ignored with a regular user token."
+        in: header
+        name: X-EVERMILE-MERCHANT-ID
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: A trace ID for tracing the request through the Evermile platform
+        in: header
+        name: X-EVERMILE-TRACE-ID
+        required: false
+        schema:
+          type: string
+      - description: A store ID for an order's store platform context
+        in: header
+        name: X-EVERMILE-STORE-ID
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/orderListItem'
+                type: array
+          description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                example: Unauthorized
+                type: string
+          description: Unauthorized access
+      summary: Get orders
+      tags:
+      - Orders
+    parameters:
+    - description: "The merchant ID, if using a client credentials token. Will be\
+        \ ignored with a regular user token."
+      in: header
+      name: X-EVERMILE-MERCHANT-ID
+      required: false
+      schema:
+        format: uuid
+        type: string
+    - description: A trace ID for tracing the request through the Evermile platform
+      in: header
+      name: X-EVERMILE-TRACE-ID
+      required: false
+      schema:
+        type: string
+    - description: A store ID for an order's store platform context
+      in: header
+      name: X-EVERMILE-STORE-ID
+      required: false
+      schema:
+        type: string
+  /sender_infos:
+    get:
+      description: Get all sender infos or delivery origin locations
+      parameters:
+      - description: Whether this action refers to pickup or sender info (pickup/info)
+        in: query
+        name: type
+        required: true
+        schema:
+          $ref: '#/components/schemas/locationTypeEnum'
+      - description: "The merchant ID, if using a client credentials token. Will be\
+          \ ignored with a regular user token."
+        in: header
+        name: X-EVERMILE-MERCHANT-ID
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: A trace ID for tracing the request through the Evermile platform
+        in: header
+        name: X-EVERMILE-TRACE-ID
+        required: false
+        schema:
+          type: string
+      - description: A store ID for an order's store platform context
+        in: header
+        name: X-EVERMILE-STORE-ID
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/locationsResponse'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                example: Invalid request
+                type: string
+          description: Invalid request body
+        "401":
+          content:
+            application/json:
+              schema:
+                example: Unauthorized
+                type: string
+          description: Unauthorized access
+        "409":
+          content:
+            application/json:
+              schema:
+                example: Too many requests
+                type: string
+          description: Rate limit exceeded
+      summary: Get sender and location infos
+      tags:
+      - Locations
+    parameters:
+    - description: "The merchant ID, if using a client credentials token. Will be\
+        \ ignored with a regular user token."
+      in: header
+      name: X-EVERMILE-MERCHANT-ID
+      required: false
+      schema:
+        format: uuid
+        type: string
+    - description: A trace ID for tracing the request through the Evermile platform
+      in: header
+      name: X-EVERMILE-TRACE-ID
+      required: false
+      schema:
+        type: string
+    - description: A store ID for an order's store platform context
+      in: header
+      name: X-EVERMILE-STORE-ID
+      required: false
+      schema:
+        type: string
+  /sender_info:
+    parameters:
+    - description: "The merchant ID, if using a client credentials token. Will be\
+        \ ignored with a regular user token."
+      in: header
+      name: X-EVERMILE-MERCHANT-ID
+      required: false
+      schema:
+        format: uuid
+        type: string
+    - description: A trace ID for tracing the request through the Evermile platform
+      in: header
+      name: X-EVERMILE-TRACE-ID
+      required: false
+      schema:
+        type: string
+    - description: A store ID for an order's store platform context
+      in: header
+      name: X-EVERMILE-STORE-ID
+      required: false
+      schema:
+        type: string
+    put:
+      parameters:
+      - description: Whether this action refers to pickup or sender info (pickup/info)
+        in: query
+        name: type
+        required: true
+        schema:
+          $ref: '#/components/schemas/locationTypeEnum'
+      - description: "The merchant ID, if using a client credentials token. Will be\
+          \ ignored with a regular user token."
+        in: header
+        name: X-EVERMILE-MERCHANT-ID
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: A trace ID for tracing the request through the Evermile platform
+        in: header
+        name: X-EVERMILE-TRACE-ID
+        required: false
+        schema:
+          type: string
+      - description: A store ID for an order's store platform context
+        in: header
+        name: X-EVERMILE-STORE-ID
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/locationReq'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/locationResp'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                example: Invalid request
+                type: string
+          description: Invalid request body
+        "401":
+          content:
+            application/json:
+              schema:
+                example: Unauthorized
+                type: string
+          description: Unauthorized access
+        "409":
+          description: The requested location name clashes with an existing location
+            name
+        "429":
+          content:
+            application/json:
+              schema:
+                example: Too many requests
+                type: string
+          description: Rate limit exceeded
+      summary: Create or update a delivery location
+      tags:
+      - Locations
+  /sender_info/{id}:
+    delete:
+      parameters:
+      - description: The sender info ID
+        example: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6eaa
+        in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: "The merchant ID, if using a client credentials token. Will be\
+          \ ignored with a regular user token."
+        in: header
+        name: X-EVERMILE-MERCHANT-ID
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: A trace ID for tracing the request through the Evermile platform
+        in: header
+        name: X-EVERMILE-TRACE-ID
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: The request structure is invalid
+        "401":
+          description: Unauthorized request
+        "404":
+          description: The requested ID was not found
+        "409":
+          description: The requested ID is the last location and cannot be deleted
+      summary: Delete a delivery location
+      tags:
+      - Locations
+    parameters:
+    - description: "The merchant ID, if using a client credentials token. Will be\
+        \ ignored with a regular user token."
+      in: header
+      name: X-EVERMILE-MERCHANT-ID
+      required: false
+      schema:
+        format: uuid
+        type: string
+    - description: A trace ID for tracing the request through the Evermile platform
+      in: header
+      name: X-EVERMILE-TRACE-ID
+      required: false
+      schema:
+        type: string
+  /order/{orderId}:
+    delete:
+      description: |
+        Cancel the order with the given ID.<br>
+        This is an asynchronous call.<br>
+        Updates will be sent via the status update API and can be requested by the order details API.
+      parameters:
+      - description: Should the order be cancelled immediately if there is no cancellation
+          fee. Default is false.
+        example: true
+        in: query
+        name: noConfirmIfNoFee
+        schema:
+          type: boolean
+      - description: A token to confirm cancellation after receiving 402 code
+        in: header
+        name: x-evermile-token
+        required: false
+        schema:
+          type: string
+      - description: "The merchant ID, if using a client credentials token. Will be\
+          \ ignored with a regular user token."
+        in: header
+        name: X-EVERMILE-MERCHANT-ID
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: A trace ID for tracing the request through the Evermile platform
+        in: header
+        name: X-EVERMILE-TRACE-ID
+        required: false
+        schema:
+          type: string
+      - description: The ID of the order
+        in: path
+        name: orderId
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: The request structure is invalid
+        "401":
+          description: Unauthorized request
+        "402":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/_order__orderId__delete_402_response'
+          description: Payment confirmation required to complete cancellation
+        "403":
+          description: The order cannot be cancelled (e.g already delivered)
+        "404":
+          description: The requested ID was not found
+      summary: Cancel an order
+      tags:
+      - Orders
+    get:
+      description: Get details for the order with the given ID
+      parameters:
+      - description: Should include live tracking info with this order. Default is
+          false.
+        example: true
+        in: query
+        name: includeTrackingInfo
+        schema:
+          type: boolean
+      - description: "The merchant ID, if using a client credentials token. Will be\
+          \ ignored with a regular user token."
+        in: header
+        name: X-EVERMILE-MERCHANT-ID
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: A trace ID for tracing the request through the Evermile platform
+        in: header
+        name: X-EVERMILE-TRACE-ID
+        required: false
+        schema:
+          type: string
+      - description: The ID of the order
+        in: path
+        name: orderId
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/orderDetails'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                example: Invalid request
+                type: string
+          description: Invalid request body
+        "401":
+          content:
+            application/json:
+              schema:
+                example: Unauthorized
+                type: string
+          description: Unauthorized access
+        "404":
+          content:
+            application/json:
+              schema:
+                example: Could not find order
+                type: string
+          description: The specified resource was not found
+        "409":
+          content:
+            application/json:
+              schema:
+                example: Too many requests
+                type: string
+          description: Rate limit exceeded
+      summary: Fetch order details
+      tags:
+      - Orders
+    parameters:
+    - description: "The merchant ID, if using a client credentials token. Will be\
+        \ ignored with a regular user token."
+      in: header
+      name: X-EVERMILE-MERCHANT-ID
+      required: false
+      schema:
+        format: uuid
+        type: string
+    - description: A trace ID for tracing the request through the Evermile platform
+      in: header
+      name: X-EVERMILE-TRACE-ID
+      required: false
+      schema:
+        type: string
+    - description: The ID of the order
+      in: path
+      name: orderId
+      required: true
+      schema:
+        format: uuid
+        type: string
+    patch:
+      description: Update details for the order with the given ID. This sets the order
+        to "manually updated".
+      parameters:
+      - description: "The merchant ID, if using a client credentials token. Will be\
+          \ ignored with a regular user token."
+        in: header
+        name: X-EVERMILE-MERCHANT-ID
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: A trace ID for tracing the request through the Evermile platform
+        in: header
+        name: X-EVERMILE-TRACE-ID
+        required: false
+        schema:
+          type: string
+      - description: The ID of the order
+        in: path
+        name: orderId
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_order__orderId__patch_request'
+        required: true
+      responses:
+        "200":
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                example: Invalid request
+                type: string
+          description: Invalid request body
+        "401":
+          content:
+            application/json:
+              schema:
+                example: Unauthorized
+                type: string
+          description: Unauthorized access
+        "404":
+          content:
+            application/json:
+              schema:
+                example: Could not find order
+                type: string
+          description: The specified resource was not found
+        "409":
+          content:
+            application/json:
+              schema:
+                example: Too many requests
+                type: string
+          description: Rate limit exceeded
+      summary: Update order details
+      tags:
+      - Orders
+  /order/{orderId}/label:
+    get:
+      description: "Create a label for an order, return the file's contents"
+      parameters:
+      - description: "The merchant ID, if using a client credentials token. Will be\
+          \ ignored with a regular user token."
+        in: header
+        name: X-EVERMILE-MERCHANT-ID
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: A trace ID for tracing the request through the Evermile platform
+        in: header
+        name: X-EVERMILE-TRACE-ID
+        required: false
+        schema:
+          type: string
+      - description: The ID of the order
+        in: path
+        name: orderId
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "201":
+          content:
+            application/pdf:
+              schema:
+                format: binary
+                type: string
+            text/html:
+              schema:
+                type: string
+          description: OK
+      summary: Create a label for an order
+      tags:
+      - Orders
+    parameters:
+    - description: "The merchant ID, if using a client credentials token. Will be\
+        \ ignored with a regular user token."
+      in: header
+      name: X-EVERMILE-MERCHANT-ID
+      required: false
+      schema:
+        format: uuid
+        type: string
+    - description: A trace ID for tracing the request through the Evermile platform
+      in: header
+      name: X-EVERMILE-TRACE-ID
+      required: false
+      schema:
+        type: string
+    - description: The ID of the order
+      in: path
+      name: orderId
+      required: true
+      schema:
+        format: uuid
+        type: string
+  /order/{orderId}/liveTracking:
+    get:
+      description: Get live order tracking details for the order with the given ID
+      parameters:
+      - description: "The merchant ID, if using a client credentials token. Will be\
+          \ ignored with a regular user token."
+        in: header
+        name: X-EVERMILE-MERCHANT-ID
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: A trace ID for tracing the request through the Evermile platform
+        in: header
+        name: X-EVERMILE-TRACE-ID
+        required: false
+        schema:
+          type: string
+      - description: The ID of the order
+        in: path
+        name: orderId
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/orderTrackingInfo'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                example: Invalid request
+                type: string
+          description: Invalid request body
+        "401":
+          content:
+            application/json:
+              schema:
+                example: Unauthorized
+                type: string
+          description: Unauthorized access
+        "404":
+          content:
+            application/json:
+              schema:
+                example: Could not find order
+                type: string
+          description: The specified resource was not found
+        "409":
+          content:
+            application/json:
+              schema:
+                example: Too many requests
+                type: string
+          description: Rate limit exceeded
+      summary: Fetch live order tracking
+      tags:
+      - Orders
+    parameters:
+    - description: "The merchant ID, if using a client credentials token. Will be\
+        \ ignored with a regular user token."
+      in: header
+      name: X-EVERMILE-MERCHANT-ID
+      required: false
+      schema:
+        format: uuid
+        type: string
+    - description: A trace ID for tracing the request through the Evermile platform
+      in: header
+      name: X-EVERMILE-TRACE-ID
+      required: false
+      schema:
+        type: string
+    - description: The ID of the order
+      in: path
+      name: orderId
+      required: true
+      schema:
+        format: uuid
+        type: string
+  /address/validate:
+    get:
+      description: Validate that an address is located in an area served by the Evermile
+        delivery network
+      parameters:
+      - description: The street for delivery
+        example: Oxford Rd.
+        in: query
+        name: street
+        required: true
+        schema:
+          type: string
+      - description: The city for delivery
+        example: London
+        in: query
+        name: city
+        required: true
+        schema:
+          type: string
+      - description: 2-letter code for the country for delivery
+        example: UK
+        in: query
+        name: country
+        schema:
+          type: string
+      - description: The postal code for delivery
+        example: W1S 3PT
+        in: query
+        name: postcode
+        required: true
+        schema:
+          type: string
+      - description: "The (lat, lng) coordinates. Not required, but will be used if\
+          \ provided."
+        example: "51.528596197212174,-0.1199161745400151"
+        in: query
+        name: coordinates
+        schema:
+          type: string
+      - description: A trace ID for tracing the request through the Evermile platform
+        in: header
+        name: X-EVERMILE-TRACE-ID
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/invalidAddressBody'
+          description: Invalid address details
+        "406":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/invalidAddressBody'
+          description: Invalid address details
+        "401":
+          content:
+            application/json:
+              schema:
+                example: Unauthorized
+                type: string
+          description: Unauthorized access
+        "409":
+          content:
+            application/json:
+              schema:
+                example: Too many requests
+                type: string
+          description: Rate limit exceeded
+      summary: Validate address
+      tags:
+      - Validations
+    parameters:
+    - description: A trace ID for tracing the request through the Evermile platform
+      in: header
+      name: X-EVERMILE-TRACE-ID
+      required: false
+      schema:
+        type: string
+  /phone/validate:
+    get:
+      description: Validate that a phone number is valid
+      parameters:
+      - description: The phone number to validate
+        example: 441242240310
+        in: query
+        name: phone
+        required: true
+        schema:
+          type: string
+      - description: A trace ID for tracing the request through the Evermile platform
+        in: header
+        name: X-EVERMILE-TRACE-ID
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Invalid phone number
+      summary: Validate phone number
+      tags:
+      - Validations
+    parameters:
+    - description: A trace ID for tracing the request through the Evermile platform
+      in: header
+      name: X-EVERMILE-TRACE-ID
+      required: false
+      schema:
+        type: string
+  /email/validate:
+    get:
+      description: Validate that an email is valid
+      parameters:
+      - description: The email to validate
+        example: customer@evermile.io
+        in: query
+        name: email
+        required: true
+        schema:
+          type: string
+      - description: A trace ID for tracing the request through the Evermile platform
+        in: header
+        name: X-EVERMILE-TRACE-ID
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Invalid email
+      summary: Validate email
+      tags:
+      - Validations
+    parameters:
+    - description: A trace ID for tracing the request through the Evermile platform
+      in: header
+      name: X-EVERMILE-TRACE-ID
+      required: false
+      schema:
+        type: string
+  /webhook:
+    get:
+      description: Get the list of all registered webhooks
+      parameters:
+      - description: "The merchant ID, if using a client credentials token. Will be\
+          \ ignored with a regular user token."
+        in: header
+        name: X-EVERMILE-MERCHANT-ID
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: A trace ID for tracing the request through the Evermile platform
+        in: header
+        name: X-EVERMILE-TRACE-ID
+        required: false
+        schema:
+          type: string
+      - description: The auth header specified in the URL registration request (the
+          actual header name is up to the user)
+        in: header
+        name: X-EVERMILE-AUTH-HEADER
+        required: true
+        schema:
+          type: string
+      - description: The webhook topic this callback is referring to
+        in: header
+        name: X-EVERMILE-WEBHOOK-TOPIC
+        required: true
+        schema:
+          $ref: '#/components/schemas/webhookTopic'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/webhookGetResponse'
+          description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                example: Unauthorized
+                type: string
+          description: Unauthorized access
+        "409":
+          content:
+            application/json:
+              schema:
+                example: Too many requests
+                type: string
+          description: Rate limit exceeded
+      summary: List all webhooks
+      tags:
+      - Webhooks
+    parameters:
+    - description: "The merchant ID, if using a client credentials token. Will be\
+        \ ignored with a regular user token."
+      in: header
+      name: X-EVERMILE-MERCHANT-ID
+      required: false
+      schema:
+        format: uuid
+        type: string
+    - description: A trace ID for tracing the request through the Evermile platform
+      in: header
+      name: X-EVERMILE-TRACE-ID
+      required: false
+      schema:
+        type: string
+    - description: The auth header specified in the URL registration request (the
+        actual header name is up to the user)
+      in: header
+      name: X-EVERMILE-AUTH-HEADER
+      required: true
+      schema:
+        type: string
+    - description: The webhook topic this callback is referring to
+      in: header
+      name: X-EVERMILE-WEBHOOK-TOPIC
+      required: true
+      schema:
+        $ref: '#/components/schemas/webhookTopic'
+    post:
+      callbacks:
+        order.created:
+          '{$request.body#/url}':
+            post:
+              description: Callback on order creation
+              operationId: order_created_Post
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/orderCreatedCallbackResp'
+                description: The order creation update callback
+              responses:
+                "202":
+                  description: |
+                    Your server implementation should return this HTTP status code
+                    if the data was received successfully
+              summary: Created
+              x-callback-request: true
+        order.updated:
+          '{$request.body#/url}':
+            post:
+              description: Callback on order update
+              operationId: order_updated_Post
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/orderCreatedCallbackResp'
+                description: The order update callback
+              responses:
+                "202":
+                  description: |
+                    Your server implementation should return this HTTP status code
+                    if the data was received successfully
+              summary: Order Updated
+              x-callback-request: true
+        order.cancelled:
+          '{$request.body#/url}':
+            post:
+              description: Callback on order cancellation
+              operationId: order_cancelled_Post
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/orderCancelledCallbackResp'
+                description: The order cancellation callback
+              responses:
+                "202":
+                  description: |
+                    Your server implementation should return this HTTP status code
+                    if the data was received successfully
+              summary: Cancelled
+              x-callback-request: true
+        order.collected:
+          '{$request.body#/url}':
+            post:
+              description: Callback on order collection by a delivery company
+              operationId: order_collected_Post
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/orderCollectedCallbackResp'
+                description: The order collection callback
+              responses:
+                "202":
+                  description: "Your server implementation should return this HTTP\
+                    \ status code\nif the data was received successfully   \n"
+              summary: Collected
+              x-callback-request: true
+        order.delivered:
+          '{$request.body#/url}':
+            post:
+              description: Callback on successful order delivery by a delivery company
+              operationId: order_delivered_Post
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/orderDeliveredCallbackResp'
+                description: The order delivered callback
+              responses:
+                "202":
+                  description: |
+                    Your server implementation should return this HTTP status code
+                    if the data was received successfully
+              summary: Delivered
+              x-callback-request: true
+        order.failed:
+          '{$request.body#/url}':
+            post:
+              description: Callback on failed order delivery by a delivery company
+              operationId: order_failed_Post
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/orderFailedCallbackResp'
+                description: The order failed callback
+              responses:
+                "202":
+                  description: |
+                    Your server implementation should return this HTTP status code
+                    if the data was received successfully
+              summary: Failed
+              x-callback-request: true
+        delivery.liveUpdate:
+          '{$request.body#/url}':
+            post:
+              description: Callback on a live update of an ongoing delivery (when
+                a courier is on the way to the end customer)
+              operationId: delivery_liveUpdate_Post
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/deliveryLiveUpdateCallbackResp'
+                description: A live update callback body
+              responses:
+                "202":
+                  description: |
+                    Your server implementation should return this HTTP status code
+                    if the data was received successfully
+              summary: Live Update
+              x-callback-request: true
+      description: Register a webhook
+      parameters:
+      - description: "The merchant ID, if using a client credentials token. Will be\
+          \ ignored with a regular user token."
+        in: header
+        name: X-EVERMILE-MERCHANT-ID
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: A trace ID for tracing the request through the Evermile platform
+        in: header
+        name: X-EVERMILE-TRACE-ID
+        required: false
+        schema:
+          type: string
+      - description: The auth header specified in the URL registration request (the
+          actual header name is up to the user)
+        in: header
+        name: X-EVERMILE-AUTH-HEADER
+        required: true
+        schema:
+          type: string
+      - description: The webhook topic this callback is referring to
+        in: header
+        name: X-EVERMILE-WEBHOOK-TOPIC
+        required: true
+        schema:
+          $ref: '#/components/schemas/webhookTopic'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/webhookRequest'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/webhookPostResponse'
+          description: Created
+        "401":
+          content:
+            application/json:
+              schema:
+                example: Unauthorized
+                type: string
+          description: Unauthorized access
+        "409":
+          content:
+            application/json:
+              schema:
+                example: Too many requests
+                type: string
+          description: Rate limit exceeded
+      summary: Register webhook
+      tags:
+      - Webhooks
+  /webhook/{webhookId}:
+    delete:
+      description: Delete a previously registered webhook
+      parameters:
+      - description: "The merchant ID, if using a client credentials token. Will be\
+          \ ignored with a regular user token."
+        in: header
+        name: X-EVERMILE-MERCHANT-ID
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: A trace ID for tracing the request through the Evermile platform
+        in: header
+        name: X-EVERMILE-TRACE-ID
+        required: false
+        schema:
+          type: string
+      - description: The ID of the webhook
+        in: path
+        name: webhookId
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "202":
+          description: Accepted
+        "401":
+          content:
+            application/json:
+              schema:
+                example: Unauthorized
+                type: string
+          description: Unauthorized access
+        "404":
+          content:
+            application/json:
+              schema:
+                example: Could not find order
+                type: string
+          description: The specified resource was not found
+        "409":
+          content:
+            application/json:
+              schema:
+                example: Too many requests
+                type: string
+          description: Rate limit exceeded
+      summary: Delete a webhook
+      tags:
+      - Webhooks
+    get:
+      description: Get the details of a previously registered webhook
+      parameters:
+      - description: "The merchant ID, if using a client credentials token. Will be\
+          \ ignored with a regular user token."
+        in: header
+        name: X-EVERMILE-MERCHANT-ID
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: A trace ID for tracing the request through the Evermile platform
+        in: header
+        name: X-EVERMILE-TRACE-ID
+        required: false
+        schema:
+          type: string
+      - description: The ID of the webhook
+        in: path
+        name: webhookId
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/webhook'
+          description: OK
+        "401":
+          content:
+            application/json:
+              schema:
+                example: Unauthorized
+                type: string
+          description: Unauthorized access
+        "409":
+          content:
+            application/json:
+              schema:
+                example: Too many requests
+                type: string
+          description: Rate limit exceeded
+      summary: Get webhook details
+      tags:
+      - Webhooks
+    parameters:
+    - description: "The merchant ID, if using a client credentials token. Will be\
+        \ ignored with a regular user token."
+      in: header
+      name: X-EVERMILE-MERCHANT-ID
+      required: false
+      schema:
+        format: uuid
+        type: string
+    - description: A trace ID for tracing the request through the Evermile platform
+      in: header
+      name: X-EVERMILE-TRACE-ID
+      required: false
+      schema:
+        type: string
+    - description: The ID of the webhook
+      in: path
+      name: webhookId
+      required: true
+      schema:
+        format: uuid
+        type: string
+components:
+  parameters:
+    locationParam:
+      description: Whether this action refers to pickup or sender info (pickup/info)
+      in: query
+      name: type
+      required: true
+      schema:
+        $ref: '#/components/schemas/locationTypeEnum'
+  responses:
+    invalidRequest:
+      content:
+        application/json:
+          schema:
+            example: Invalid request
+            type: string
+      description: Invalid request body
+    Unauthorized:
+      content:
+        application/json:
+          schema:
+            example: Unauthorized
+            type: string
+      description: Unauthorized access
+    RateLimitExceeded:
+      content:
+        application/json:
+          schema:
+            example: Too many requests
+            type: string
+      description: Rate limit exceeded
+    NotFound:
+      content:
+        application/json:
+          schema:
+            example: Could not find order
+            type: string
+      description: The specified resource was not found
+    invalidAddress:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/invalidAddressBody'
+      description: Invalid address details
+  schemas:
+    quoteReq:
+      description: A quote request object
+      properties:
+        pickupLocations:
+          description: A list of location ids from which the items can be picked up.
+          items:
+            description: The location ID
+            example: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6ecc
+            format: uuid
+            type: string
+          maxItems: 2
+          minItems: 1
+          type: array
+        destinationLocations:
+          description: A list of locations to which the items can be delivered
+          items:
+            $ref: '#/components/schemas/destinationLocation'
+          maxItems: 2
+          minItems: 1
+          type: array
+        parcels:
+          description: The list of parcels to pick up in this delivery from any **single**
+            source<br>(must all be available at all of the pickup locations in *pickupLocations*)
+          items:
+            $ref: '#/components/schemas/parcel'
+          minItems: 1
+          type: array
+        handling:
+          description: Handling instructions for a parcel
+          example:
+          - alcohol
+          - fluids
+          - fragile
+          items:
+            $ref: '#/components/schemas/handlingInstruction'
+          type: array
+        proofOfDeliveryRequirement:
+          default:
+          - none
+          description: Proof of delivery requirements for a parcel
+          example:
+          - signature
+          - photoId
+          items:
+            $ref: '#/components/schemas/proofOfDeliveryRequirement'
+          type: array
+        instructions:
+          description: Additional handling instructions for the packages
+          example: Fragile! Handle with care
+          type: string
+          x-oapi-codegen-extra-tags:
+            csv: Instructions
+        originalOrderId:
+          description: "The id of the order that this quote is based on, usually for\
+            \ cases when editing an existing order"
+          example: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6ecc
+          format: uuid
+          type: string
+        excludeCarriers:
+          description: An array of carriers names to exclude from the proposals results
+          example:
+          - Stuart
+          items:
+            $ref: '#/components/schemas/carriersType'
+          type: array
+        excludedVehicleTypes:
+          description: Which vehicle types to exclude from the request. **note** excluding
+            vehicle types may result in higher prices.
+          example:
+          - bicycle
+          - motorcycle
+          items:
+            $ref: '#/components/schemas/vehicleType'
+          minItems: 1
+          type: array
+        additionalProposalTypes:
+          items:
+            $ref: '#/components/schemas/proposalType'
+          minItems: 1
+          type: array
+      required:
+      - destinationLocations
+      - parcels
+      - pickupLocations
+      type: object
+    destinationLocation:
+      description: The dropoff location details
+      properties:
+        address:
+          $ref: '#/components/schemas/address'
+        deliverySlot:
+          $ref: '#/components/schemas/deliverySlot'
+        customerId:
+          description: The ID of the customer
+          example: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6edd
+          format: uuid
+          type: string
+    address:
+      description: An address for picking up or dropping off
+      example:
+        city: London
+        geoLocation:
+          lng: -0.140666
+          lat: 51.511221
+        postalCode: W1S 3PT
+        addressLine1: 32 Saville Row
+        addressLine2: "12"
+        type: store
+      properties:
+        addressLine1:
+          description: Street and house number for the address
+          example: 32 Saville Row
+          type: string
+          x-oapi-codegen-extra-tags:
+            csv: Address Line 1
+        addressLine2:
+          description: Additional address details such as flat number
+          example: "12"
+          type: string
+          x-oapi-codegen-extra-tags:
+            csv: Address Line 2
+        city:
+          description: The city for the address
+          example: London
+          type: string
+          x-oapi-codegen-extra-tags:
+            csv: City
+        postalCode:
+          description: The postal code for the address
+          example: W1S 3PT
+          type: string
+          x-oapi-codegen-extra-tags:
+            csv: Postal Code
+        geoLocation:
+          $ref: '#/components/schemas/geoLocation'
+        type:
+          $ref: '#/components/schemas/addressType'
+      required:
+      - addressLine1
+      - city
+      - postalCode
+      - type
+      type: object
+    geoLocation:
+      description: The geographical location (lat/lng)
+      example:
+        lng: -0.140666
+        lat: 51.511221
+      properties:
+        lat:
+          example: 51.511221
+          format: double
+          type: number
+        lng:
+          example: -0.140666
+          format: double
+          type: number
+      required:
+      - lat
+      - lng
+      type: object
+    addressType:
+      default: store
+      description: |
+        <u>The type of address</u>: <br>
+        <table>
+          <tr><td>office</td>       <td>An office building</td></tr>
+          <tr><td>pudo</td>         <td>A Pickup/Dropoff depot</td></tr>
+          <tr><td>residential</td>  <td>A residential building</td></tr>
+          <tr><td>store</td>        <td>A store</td></tr>
+          <tr><td>warehouse</td>    <td>A warehouse / micro-fulfillment center</td></tr>
+        </table>
+      enum:
+      - office
+      - pudo
+      - residential_building
+      - residential_private
+      - store
+      - warehouse
+      example: store
+      type: string
+      x-oapi-codegen-extra-tags:
+        csv: Type
+    deliverySlot:
+      description: A slot of time
+      example:
+        start: 2022-07-21T10:20:28Z
+        end: 2022-07-21T17:32:28Z
+      properties:
+        start:
+          description: The start time in ISO8601 format
+          example: 2022-07-21T10:20:28Z
+          format: date-time
+          type: string
+          x-oapi-codegen-extra-tags:
+            csv: start
+        end:
+          description: The end time in ISO8601 format
+          example: 2022-07-21T17:32:28Z
+          format: date-time
+          type: string
+          x-oapi-codegen-extra-tags:
+            csv: end
+      required:
+      - end
+      - start
+      type: object
+    parcel:
+      description: Data about the parcel
+      example:
+        parcelType: Package
+        itemsList:
+        - quantity: 1
+          description: Bottle of wine
+          sku: SK43234
+          value:
+            discount:
+              reason: deliverTogether
+              discountPercent: 15
+              listPriceCents: 500
+            currency: GBP
+            value: 500
+          weightKg: 2.3
+        - quantity: 1
+          description: Bottle of wine
+          sku: SK43234
+          value:
+            discount:
+              reason: deliverTogether
+              discountPercent: 15
+              listPriceCents: 500
+            currency: GBP
+            value: 500
+          weightKg: 2.3
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        weightKg: 2.3
+        dimensions:
+          name: M
+          widthCm: 8.25
+          heightCm: 5.1
+          lengthCm: 10.25
+      properties:
+        id:
+          description: The id of the parcel object in evermile db
+          format: uuid
+          type: string
+        dimensions:
+          $ref: '#/components/schemas/dimensions'
+        weightKg:
+          description: Weight of the package in Kilograms
+          example: 2.3
+          format: float
+          type: number
+          x-oapi-codegen-extra-tags:
+            csv: Weight (kg)
+        parcelType:
+          $ref: '#/components/schemas/parcelType'
+        itemsList:
+          items:
+            $ref: '#/components/schemas/item'
+          minItems: 1
+          type: array
+      required:
+      - dimensions
+      - parcelType
+      - weightKg
+      type: object
+    dimensions:
+      description: A parcel's dimension
+      example:
+        name: M
+        widthCm: 8.25
+        heightCm: 5.1
+        lengthCm: 10.25
+      properties:
+        name:
+          description: The name of this set of dimensions
+          example: M
+          type: string
+        lengthCm:
+          description: Length of the parcel in centimeters
+          example: 10.25
+          format: float
+          type: number
+          x-oapi-codegen-extra-tags:
+            csv: Length (cm)
+        widthCm:
+          description: Width of the parcel in centimeters
+          example: 8.25
+          format: float
+          type: number
+          x-oapi-codegen-extra-tags:
+            csv: Width (cm)
+        heightCm:
+          description: Height of the parcel in centimeters
+          example: 5.1
+          format: float
+          type: number
+          x-oapi-codegen-extra-tags:
+            csv: Height (cm)
+      required:
+      - heightCm
+      - lengthCm
+      - widthCm
+      type: object
+    parcelType:
+      default: Package
+      description: |
+        <u>The type of address</u>: <br>
+        <table>
+          <tr><td>Package</td>          <td>A packed box</td></tr>
+          <tr><td>FlowerBouquet</td>    <td>A flower bouquet</td></tr>
+        </table>
+      enum:
+      - Package
+      - FlowerBouquet
+      example: Package
+      type: string
+      x-oapi-codegen-extra-tags:
+        csv: Type
+    item:
+      description: A single item inside a package
+      example:
+        quantity: 1
+        description: Bottle of wine
+        sku: SK43234
+        value:
+          discount:
+            reason: deliverTogether
+            discountPercent: 15
+            listPriceCents: 500
+          currency: GBP
+          value: 500
+        weightKg: 2.3
+      properties:
+        description:
+          description: What the item is
+          example: Bottle of wine
+          type: string
+          x-oapi-codegen-extra-tags:
+            csv: Description
+        value:
+          $ref: '#/components/schemas/price'
+        quantity:
+          default: 1
+          description: The number of these items in a parcel
+          example: 1
+          format: int32
+          type: integer
+        sku:
+          description: An optional SKU for this item
+          example: SK43234
+          type: string
+        weightKg:
+          description: Weight of the item in Kilograms
+          example: 2.3
+          format: double
+          type: number
+      required:
+      - description
+      - quantity
+      - value
+      type: object
+    price:
+      description: A price object
+      example:
+        discount:
+          reason: deliverTogether
+          discountPercent: 15
+          listPriceCents: 500
+        currency: GBP
+        value: 500
+      properties:
+        value:
+          description: The item's value in cents/pence. E.G. "500" = 5 GBP
+          example: 500
+          format: int64
+          type: integer
+        currency:
+          example: GBP
+          type: string
+        discount:
+          $ref: '#/components/schemas/discount'
+      required:
+      - currency
+      - value
+      type: object
+    discount:
+      description: A discount object
+      example:
+        reason: deliverTogether
+        discountPercent: 15
+        listPriceCents: 500
+      properties:
+        listPriceCents:
+          description: The item's list price (before discount) in cents/pence. E.G.
+            "500" = 5 GBP
+          example: 500
+          format: int64
+          type: integer
+        discountPercent:
+          description: The discount percentage
+          example: 15
+          format: int64
+          type: integer
+        reason:
+          description: The discount reason
+          enum:
+          - deliverTogether
+          example: deliverTogether
+          type: string
+      required:
+      - discountPercent
+      - listPriceCents
+      - reason
+      type: object
+    handlingInstruction:
+      description: "<u>Handling instructions for an item</u>: <br>            \n<table>\n\
+        \  <tr><td>alcohol</td>                <td>Parcel contains alcohol</td></tr>\n\
+        \  <tr><td>cake</td>                   <td>Parcel contains a cake</td></tr>\n\
+        \  <tr><td>flowers</td>                <td>Parcel contains flowers</td></tr>\n\
+        \  <tr><td>fluids</td>                 <td>Parcel contains fluids (e.g. drinks)</td></tr>\n\
+        \  <tr><td>fragile</td>                <td>Parcel contains fragile items</td></tr>\n\
+        \  <tr><td>hot</td>                    <td>Parcel Contents are hot (e.g. food)</td></tr>\n\
+        \  <tr><td>perishable</td>             <td>Parcel contains perishable items</td></tr>\n\
+        \  <tr><td>prescriptionDrugs</td>      <td>Parcel contains prescription drugs</td></tr>\n\
+        \  <tr><td>requiresRefrigeration</td>  <td>Parcel requires refrigeration</td></tr>\n\
+        \  <tr><td>rightSideUp</td>            <td>Parcel must be kept right-side-up\
+        \ (do not flip)</td></tr>\n  <tr><td>temperatureControlled</td>  <td>Parcel\
+        \ has a temperature control device</td></tr>\n</table>\n"
+      enum:
+      - alcohol
+      - cake
+      - flowers
+      - fluids
+      - fragile
+      - hot
+      - perishable
+      - prescriptionDrugs
+      - requiresRefrigeration
+      - rightSideUp
+      - temperatureControlled
+      type: string
+    proofOfDeliveryRequirement:
+      description: |
+        An optional requirement for proof of delivery.<br>
+        <b>NOTE:</b>Requiring a proof of delivery may limit optimization options and result in more expensive delivery quotes.<br>
+        Will default to <b>none</b> if this parameter is not set.
+        <table>
+        <tr><td>signature</td>   <td>An electronic signature is required</td></tr>
+        <tr><td>parcelPhoto</td> <td>A digital photo of the delivered parcel is required</td></tr>
+        <tr><td>photoId</td>     <td>A digital photo of the recipient's photo ID is required</td></tr>
+        <tr><td>any</td>         <td>Any proof of delivery is acceptable, but required</td></tr>
+        <tr><td>none</td>        <td>No proof of delivery is required</td></tr>
+        </table>
+      enum:
+      - signature
+      - parcelPhoto
+      - photoId
+      - any
+      - none
+      type: string
+    carriersType:
+      enum:
+      - Stuart
+      - Gophr
+      - Packfleet
+      - Pedivan
+      - PedivanFBX
+      - Brisqq
+      - Finmile
+      - Uber
+      - EvermileManual
+      type: string
+    vehicleType:
+      enum:
+      - pushbike
+      - motorbike
+      - cargo_bike
+      - car
+      - small_van
+      - large_van
+      type: string
+    proposalType:
+      enum:
+      - deliverTogether
+      example: deliverTogether
+      type: string
+    quoteResponse:
+      description: Proposals response for a quote request
+      example:
+        expressProposals:
+        - proposal:
+            pickupLocationId: f9bc2fad-fa53-1279-8fe5-f4fbe24c6ecc
+            estimatedDropoff:
+              start: 2022-07-21T10:20:28Z
+              end: 2022-07-21T17:32:28Z
+            origin:
+              city: London
+              geoLocation:
+                lng: -0.140666
+                lat: 51.511221
+              postalCode: W1S 3PT
+              addressLine1: 32 Saville Row
+              addressLine2: "12"
+              type: store
+            destination:
+              city: London
+              geoLocation:
+                lng: -0.140666
+                lat: 51.511221
+              postalCode: W1S 3PT
+              addressLine1: 32 Saville Row
+              addressLine2: "12"
+              type: store
+            deliveryCompany: Evermile
+            priceLevel: 1
+            type: deliverTogether
+            dropoffWindowType: scheduledWindow
+            labels:
+            - best
+            - best
+            creditBack: 50
+            handoffInfo:
+              contactInfo:
+                address:
+                  city: London
+                  postalCode: W1S 3PT
+                  addressLine1: 32 Saville Row
+                phone: +447883196637
+                name: name
+              walkingDistanceMeters: 100
+              handoffTime:
+                start: 2022-07-21T10:20:28Z
+                end: 2022-07-21T17:32:28Z
+            price:
+              discount:
+                reason: deliverTogether
+                discountPercent: 15
+                listPriceCents: 500
+              currency: GBP
+              value: 500
+            priceVat:
+              discount:
+                reason: deliverTogether
+                discountPercent: 15
+                listPriceCents: 500
+              currency: GBP
+              value: 500
+            id: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6ecc
+            estimatedPickup:
+              start: 2022-07-21T10:20:28Z
+              end: 2022-07-21T17:32:28Z
+          label: morning
+        - proposal:
+            pickupLocationId: f9bc2fad-fa53-1279-8fe5-f4fbe24c6ecc
+            estimatedDropoff:
+              start: 2022-07-21T10:20:28Z
+              end: 2022-07-21T17:32:28Z
+            origin:
+              city: London
+              geoLocation:
+                lng: -0.140666
+                lat: 51.511221
+              postalCode: W1S 3PT
+              addressLine1: 32 Saville Row
+              addressLine2: "12"
+              type: store
+            destination:
+              city: London
+              geoLocation:
+                lng: -0.140666
+                lat: 51.511221
+              postalCode: W1S 3PT
+              addressLine1: 32 Saville Row
+              addressLine2: "12"
+              type: store
+            deliveryCompany: Evermile
+            priceLevel: 1
+            type: deliverTogether
+            dropoffWindowType: scheduledWindow
+            labels:
+            - best
+            - best
+            creditBack: 50
+            handoffInfo:
+              contactInfo:
+                address:
+                  city: London
+                  postalCode: W1S 3PT
+                  addressLine1: 32 Saville Row
+                phone: +447883196637
+                name: name
+              walkingDistanceMeters: 100
+              handoffTime:
+                start: 2022-07-21T10:20:28Z
+                end: 2022-07-21T17:32:28Z
+            price:
+              discount:
+                reason: deliverTogether
+                discountPercent: 15
+                listPriceCents: 500
+              currency: GBP
+              value: 500
+            priceVat:
+              discount:
+                reason: deliverTogether
+                discountPercent: 15
+                listPriceCents: 500
+              currency: GBP
+              value: 500
+            id: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6ecc
+            estimatedPickup:
+              start: 2022-07-21T10:20:28Z
+              end: 2022-07-21T17:32:28Z
+          label: morning
+        dateProposals:
+        - date: 2022-08-29T00:00:00.000+00:00
+          proposals:
+          - proposal:
+              pickupLocationId: f9bc2fad-fa53-1279-8fe5-f4fbe24c6ecc
+              estimatedDropoff:
+                start: 2022-07-21T10:20:28Z
+                end: 2022-07-21T17:32:28Z
+              origin:
+                city: London
+                geoLocation:
+                  lng: -0.140666
+                  lat: 51.511221
+                postalCode: W1S 3PT
+                addressLine1: 32 Saville Row
+                addressLine2: "12"
+                type: store
+              destination:
+                city: London
+                geoLocation:
+                  lng: -0.140666
+                  lat: 51.511221
+                postalCode: W1S 3PT
+                addressLine1: 32 Saville Row
+                addressLine2: "12"
+                type: store
+              deliveryCompany: Evermile
+              priceLevel: 1
+              type: deliverTogether
+              dropoffWindowType: scheduledWindow
+              labels:
+              - best
+              - best
+              creditBack: 50
+              handoffInfo:
+                contactInfo:
+                  address:
+                    city: London
+                    postalCode: W1S 3PT
+                    addressLine1: 32 Saville Row
+                  phone: +447883196637
+                  name: name
+                walkingDistanceMeters: 100
+                handoffTime:
+                  start: 2022-07-21T10:20:28Z
+                  end: 2022-07-21T17:32:28Z
+              price:
+                discount:
+                  reason: deliverTogether
+                  discountPercent: 15
+                  listPriceCents: 500
+                currency: GBP
+                value: 500
+              priceVat:
+                discount:
+                  reason: deliverTogether
+                  discountPercent: 15
+                  listPriceCents: 500
+                currency: GBP
+                value: 500
+              id: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6ecc
+              estimatedPickup:
+                start: 2022-07-21T10:20:28Z
+                end: 2022-07-21T17:32:28Z
+            label: morning
+          - proposal:
+              pickupLocationId: f9bc2fad-fa53-1279-8fe5-f4fbe24c6ecc
+              estimatedDropoff:
+                start: 2022-07-21T10:20:28Z
+                end: 2022-07-21T17:32:28Z
+              origin:
+                city: London
+                geoLocation:
+                  lng: -0.140666
+                  lat: 51.511221
+                postalCode: W1S 3PT
+                addressLine1: 32 Saville Row
+                addressLine2: "12"
+                type: store
+              destination:
+                city: London
+                geoLocation:
+                  lng: -0.140666
+                  lat: 51.511221
+                postalCode: W1S 3PT
+                addressLine1: 32 Saville Row
+                addressLine2: "12"
+                type: store
+              deliveryCompany: Evermile
+              priceLevel: 1
+              type: deliverTogether
+              dropoffWindowType: scheduledWindow
+              labels:
+              - best
+              - best
+              creditBack: 50
+              handoffInfo:
+                contactInfo:
+                  address:
+                    city: London
+                    postalCode: W1S 3PT
+                    addressLine1: 32 Saville Row
+                  phone: +447883196637
+                  name: name
+                walkingDistanceMeters: 100
+                handoffTime:
+                  start: 2022-07-21T10:20:28Z
+                  end: 2022-07-21T17:32:28Z
+              price:
+                discount:
+                  reason: deliverTogether
+                  discountPercent: 15
+                  listPriceCents: 500
+                currency: GBP
+                value: 500
+              priceVat:
+                discount:
+                  reason: deliverTogether
+                  discountPercent: 15
+                  listPriceCents: 500
+                currency: GBP
+                value: 500
+              id: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6ecc
+              estimatedPickup:
+                start: 2022-07-21T10:20:28Z
+                end: 2022-07-21T17:32:28Z
+            label: morning
+        - date: 2022-08-29T00:00:00.000+00:00
+          proposals:
+          - proposal:
+              pickupLocationId: f9bc2fad-fa53-1279-8fe5-f4fbe24c6ecc
+              estimatedDropoff:
+                start: 2022-07-21T10:20:28Z
+                end: 2022-07-21T17:32:28Z
+              origin:
+                city: London
+                geoLocation:
+                  lng: -0.140666
+                  lat: 51.511221
+                postalCode: W1S 3PT
+                addressLine1: 32 Saville Row
+                addressLine2: "12"
+                type: store
+              destination:
+                city: London
+                geoLocation:
+                  lng: -0.140666
+                  lat: 51.511221
+                postalCode: W1S 3PT
+                addressLine1: 32 Saville Row
+                addressLine2: "12"
+                type: store
+              deliveryCompany: Evermile
+              priceLevel: 1
+              type: deliverTogether
+              dropoffWindowType: scheduledWindow
+              labels:
+              - best
+              - best
+              creditBack: 50
+              handoffInfo:
+                contactInfo:
+                  address:
+                    city: London
+                    postalCode: W1S 3PT
+                    addressLine1: 32 Saville Row
+                  phone: +447883196637
+                  name: name
+                walkingDistanceMeters: 100
+                handoffTime:
+                  start: 2022-07-21T10:20:28Z
+                  end: 2022-07-21T17:32:28Z
+              price:
+                discount:
+                  reason: deliverTogether
+                  discountPercent: 15
+                  listPriceCents: 500
+                currency: GBP
+                value: 500
+              priceVat:
+                discount:
+                  reason: deliverTogether
+                  discountPercent: 15
+                  listPriceCents: 500
+                currency: GBP
+                value: 500
+              id: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6ecc
+              estimatedPickup:
+                start: 2022-07-21T10:20:28Z
+                end: 2022-07-21T17:32:28Z
+            label: morning
+          - proposal:
+              pickupLocationId: f9bc2fad-fa53-1279-8fe5-f4fbe24c6ecc
+              estimatedDropoff:
+                start: 2022-07-21T10:20:28Z
+                end: 2022-07-21T17:32:28Z
+              origin:
+                city: London
+                geoLocation:
+                  lng: -0.140666
+                  lat: 51.511221
+                postalCode: W1S 3PT
+                addressLine1: 32 Saville Row
+                addressLine2: "12"
+                type: store
+              destination:
+                city: London
+                geoLocation:
+                  lng: -0.140666
+                  lat: 51.511221
+                postalCode: W1S 3PT
+                addressLine1: 32 Saville Row
+                addressLine2: "12"
+                type: store
+              deliveryCompany: Evermile
+              priceLevel: 1
+              type: deliverTogether
+              dropoffWindowType: scheduledWindow
+              labels:
+              - best
+              - best
+              creditBack: 50
+              handoffInfo:
+                contactInfo:
+                  address:
+                    city: London
+                    postalCode: W1S 3PT
+                    addressLine1: 32 Saville Row
+                  phone: +447883196637
+                  name: name
+                walkingDistanceMeters: 100
+                handoffTime:
+                  start: 2022-07-21T10:20:28Z
+                  end: 2022-07-21T17:32:28Z
+              price:
+                discount:
+                  reason: deliverTogether
+                  discountPercent: 15
+                  listPriceCents: 500
+                currency: GBP
+                value: 500
+              priceVat:
+                discount:
+                  reason: deliverTogether
+                  discountPercent: 15
+                  listPriceCents: 500
+                currency: GBP
+                value: 500
+              id: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6ecc
+              estimatedPickup:
+                start: 2022-07-21T10:20:28Z
+                end: 2022-07-21T17:32:28Z
+            label: morning
+        validUntil: 2022-07-21T10:35:28Z
+        currentPrice:
+          discount:
+            reason: deliverTogether
+            discountPercent: 15
+            listPriceCents: 500
+          currency: GBP
+          value: 500
+        cancellationToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJvcmRlcklkIjoiZThjNGU1ZWMtZTQ1Mi00OWU3LWFlMzMtODg3NWE2ZGNmZTRjIiwicGF5bWVudCI6eyJjdXJyZW5jeSI6IkdCUCIsInZhbHVlIjoyMjh9LCJpc3MiOiJFdmVybWlsZSIsImV4cCI6MTY2MjQ1MDg4Mn0.MSqr7iuDOlS6MBFApZ58zfgasDG9t5n9J-3YydndMvQ
+        cancellationFee:
+          discount:
+            reason: deliverTogether
+            discountPercent: 15
+            listPriceCents: 500
+          currency: GBP
+          value: 500
+      properties:
+        dateProposals:
+          description: An array (map) of proposals by date
+          items:
+            $ref: '#/components/schemas/dateProposals'
+          type: array
+        expressProposals:
+          description: An array (map) of proposals by date
+          items:
+            $ref: '#/components/schemas/timeslotProposal'
+          type: array
+        validUntil:
+          description: Proposals are valid until this time in ISO8601 format
+          example: 2022-07-21T10:35:28Z
+          format: date-time
+          type: string
+        currentPrice:
+          $ref: '#/components/schemas/price'
+        cancellationFee:
+          $ref: '#/components/schemas/price'
+        cancellationToken:
+          description: "A token that should be returned in order to confirm the cancellation\
+            \ of the original order. To confirm the cancellation, pass this in an\
+            \ X-EVERMILE-TOKEN header to createOrder."
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJvcmRlcklkIjoiZThjNGU1ZWMtZTQ1Mi00OWU3LWFlMzMtODg3NWE2ZGNmZTRjIiwicGF5bWVudCI6eyJjdXJyZW5jeSI6IkdCUCIsInZhbHVlIjoyMjh9LCJpc3MiOiJFdmVybWlsZSIsImV4cCI6MTY2MjQ1MDg4Mn0.MSqr7iuDOlS6MBFApZ58zfgasDG9t5n9J-3YydndMvQ
+          type: string
+      required:
+      - dateProposals
+      - expressProposals
+      - validUntil
+      type: object
+    dateProposals:
+      example:
+        date: 2022-08-29T00:00:00.000+00:00
+        proposals:
+        - proposal:
+            pickupLocationId: f9bc2fad-fa53-1279-8fe5-f4fbe24c6ecc
+            estimatedDropoff:
+              start: 2022-07-21T10:20:28Z
+              end: 2022-07-21T17:32:28Z
+            origin:
+              city: London
+              geoLocation:
+                lng: -0.140666
+                lat: 51.511221
+              postalCode: W1S 3PT
+              addressLine1: 32 Saville Row
+              addressLine2: "12"
+              type: store
+            destination:
+              city: London
+              geoLocation:
+                lng: -0.140666
+                lat: 51.511221
+              postalCode: W1S 3PT
+              addressLine1: 32 Saville Row
+              addressLine2: "12"
+              type: store
+            deliveryCompany: Evermile
+            priceLevel: 1
+            type: deliverTogether
+            dropoffWindowType: scheduledWindow
+            labels:
+            - best
+            - best
+            creditBack: 50
+            handoffInfo:
+              contactInfo:
+                address:
+                  city: London
+                  postalCode: W1S 3PT
+                  addressLine1: 32 Saville Row
+                phone: +447883196637
+                name: name
+              walkingDistanceMeters: 100
+              handoffTime:
+                start: 2022-07-21T10:20:28Z
+                end: 2022-07-21T17:32:28Z
+            price:
+              discount:
+                reason: deliverTogether
+                discountPercent: 15
+                listPriceCents: 500
+              currency: GBP
+              value: 500
+            priceVat:
+              discount:
+                reason: deliverTogether
+                discountPercent: 15
+                listPriceCents: 500
+              currency: GBP
+              value: 500
+            id: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6ecc
+            estimatedPickup:
+              start: 2022-07-21T10:20:28Z
+              end: 2022-07-21T17:32:28Z
+          label: morning
+        - proposal:
+            pickupLocationId: f9bc2fad-fa53-1279-8fe5-f4fbe24c6ecc
+            estimatedDropoff:
+              start: 2022-07-21T10:20:28Z
+              end: 2022-07-21T17:32:28Z
+            origin:
+              city: London
+              geoLocation:
+                lng: -0.140666
+                lat: 51.511221
+              postalCode: W1S 3PT
+              addressLine1: 32 Saville Row
+              addressLine2: "12"
+              type: store
+            destination:
+              city: London
+              geoLocation:
+                lng: -0.140666
+                lat: 51.511221
+              postalCode: W1S 3PT
+              addressLine1: 32 Saville Row
+              addressLine2: "12"
+              type: store
+            deliveryCompany: Evermile
+            priceLevel: 1
+            type: deliverTogether
+            dropoffWindowType: scheduledWindow
+            labels:
+            - best
+            - best
+            creditBack: 50
+            handoffInfo:
+              contactInfo:
+                address:
+                  city: London
+                  postalCode: W1S 3PT
+                  addressLine1: 32 Saville Row
+                phone: +447883196637
+                name: name
+              walkingDistanceMeters: 100
+              handoffTime:
+                start: 2022-07-21T10:20:28Z
+                end: 2022-07-21T17:32:28Z
+            price:
+              discount:
+                reason: deliverTogether
+                discountPercent: 15
+                listPriceCents: 500
+              currency: GBP
+              value: 500
+            priceVat:
+              discount:
+                reason: deliverTogether
+                discountPercent: 15
+                listPriceCents: 500
+              currency: GBP
+              value: 500
+            id: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6ecc
+            estimatedPickup:
+              start: 2022-07-21T10:20:28Z
+              end: 2022-07-21T17:32:28Z
+          label: morning
+      properties:
+        date:
+          description: The date for which these proposals are proposed in format YYYY-MM-DD
+          example: 2022-08-29
+          format: date
+          type: string
+        proposals:
+          description: A list of timeslot proposals in the given date
+          items:
+            $ref: '#/components/schemas/timeslotProposal'
+          type: array
+      required:
+      - date
+      - proposals
+      type: object
+    timeslotProposal:
+      description: A proposal for a specific timeslot of the day
+      example:
+        proposal:
+          pickupLocationId: f9bc2fad-fa53-1279-8fe5-f4fbe24c6ecc
+          estimatedDropoff:
+            start: 2022-07-21T10:20:28Z
+            end: 2022-07-21T17:32:28Z
+          origin:
+            city: London
+            geoLocation:
+              lng: -0.140666
+              lat: 51.511221
+            postalCode: W1S 3PT
+            addressLine1: 32 Saville Row
+            addressLine2: "12"
+            type: store
+          destination:
+            city: London
+            geoLocation:
+              lng: -0.140666
+              lat: 51.511221
+            postalCode: W1S 3PT
+            addressLine1: 32 Saville Row
+            addressLine2: "12"
+            type: store
+          deliveryCompany: Evermile
+          priceLevel: 1
+          type: deliverTogether
+          dropoffWindowType: scheduledWindow
+          labels:
+          - best
+          - best
+          creditBack: 50
+          handoffInfo:
+            contactInfo:
+              address:
+                city: London
+                postalCode: W1S 3PT
+                addressLine1: 32 Saville Row
+              phone: +447883196637
+              name: name
+            walkingDistanceMeters: 100
+            handoffTime:
+              start: 2022-07-21T10:20:28Z
+              end: 2022-07-21T17:32:28Z
+          price:
+            discount:
+              reason: deliverTogether
+              discountPercent: 15
+              listPriceCents: 500
+            currency: GBP
+            value: 500
+          priceVat:
+            discount:
+              reason: deliverTogether
+              discountPercent: 15
+              listPriceCents: 500
+            currency: GBP
+            value: 500
+          id: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6ecc
+          estimatedPickup:
+            start: 2022-07-21T10:20:28Z
+            end: 2022-07-21T17:32:28Z
+        label: morning
+      properties:
+        label:
+          $ref: '#/components/schemas/proposalLabel'
+        proposal:
+          $ref: '#/components/schemas/proposal'
+      required:
+      - label
+      type: object
+    proposalLabel:
+      enum:
+      - morning
+      - noon
+      - afternoon
+      - evening
+      - allDay
+      - express
+      example: morning
+      type: string
+    proposal:
+      description: The data for a single proposal (response for a quote request)
+      example:
+        pickupLocationId: f9bc2fad-fa53-1279-8fe5-f4fbe24c6ecc
+        estimatedDropoff:
+          start: 2022-07-21T10:20:28Z
+          end: 2022-07-21T17:32:28Z
+        origin:
+          city: London
+          geoLocation:
+            lng: -0.140666
+            lat: 51.511221
+          postalCode: W1S 3PT
+          addressLine1: 32 Saville Row
+          addressLine2: "12"
+          type: store
+        destination:
+          city: London
+          geoLocation:
+            lng: -0.140666
+            lat: 51.511221
+          postalCode: W1S 3PT
+          addressLine1: 32 Saville Row
+          addressLine2: "12"
+          type: store
+        deliveryCompany: Evermile
+        priceLevel: 1
+        type: deliverTogether
+        dropoffWindowType: scheduledWindow
+        labels:
+        - best
+        - best
+        creditBack: 50
+        handoffInfo:
+          contactInfo:
+            address:
+              city: London
+              postalCode: W1S 3PT
+              addressLine1: 32 Saville Row
+            phone: +447883196637
+            name: name
+          walkingDistanceMeters: 100
+          handoffTime:
+            start: 2022-07-21T10:20:28Z
+            end: 2022-07-21T17:32:28Z
+        price:
+          discount:
+            reason: deliverTogether
+            discountPercent: 15
+            listPriceCents: 500
+          currency: GBP
+          value: 500
+        priceVat:
+          discount:
+            reason: deliverTogether
+            discountPercent: 15
+            listPriceCents: 500
+          currency: GBP
+          value: 500
+        id: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6ecc
+        estimatedPickup:
+          start: 2022-07-21T10:20:28Z
+          end: 2022-07-21T17:32:28Z
+      properties:
+        id:
+          description: The proposal ID
+          example: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6ecc
+          format: uuid
+          type: string
+        price:
+          $ref: '#/components/schemas/price'
+        priceVat:
+          $ref: '#/components/schemas/price'
+        creditBack:
+          description: "The amount of credits this proposal awards, in credit cents"
+          example: 50
+          format: int64
+          type: integer
+        estimatedPickup:
+          $ref: '#/components/schemas/deliverySlot'
+        estimatedDropoff:
+          $ref: '#/components/schemas/deliverySlot'
+        dropoffWindowType:
+          $ref: '#/components/schemas/dropoffWindowTypeEnum'
+        origin:
+          $ref: '#/components/schemas/address'
+        pickupLocationId:
+          description: The id of an existing sender location with the sender contact
+            details (optional)
+          example: f9bc2fad-fa53-1279-8fe5-f4fbe24c6ecc
+          format: uuid
+          type: string
+        destination:
+          $ref: '#/components/schemas/address'
+        deliveryCompany:
+          description: The company that will perform the delivery (if known)
+          example: Evermile
+          type: string
+        labels:
+          description: An array of labels for this proposal
+          items:
+            $ref: '#/components/schemas/proposalLabelEnum'
+          type: array
+        priceLevel:
+          format: int32
+          minimum: 1
+          type: integer
+        handoffInfo:
+          $ref: '#/components/schemas/handoffInfo'
+        type:
+          $ref: '#/components/schemas/proposalType'
+      required:
+      - destination
+      - dropoffWindowType
+      - estimatedDropoff
+      - estimatedPickup
+      - id
+      - labels
+      - origin
+      - price
+      - validUntil
+      type: object
+    dropoffWindowTypeEnum:
+      description: "<u>The reported issue</u>: <br>            \n<table>\n  <tr><td>scheduledWindow</td>\
+        \     <td>A scheduled delivery window</td></tr>\n  <tr><td>allDay</td>   \
+        \           <td>An all day window</td></tr>\n  <tr><td>express</td>      \
+        \       <td>An express window</td></tr>\n</table>\n"
+      enum:
+      - scheduledWindow
+      - allDay
+      - express
+      example: scheduledWindow
+      type: string
+    proposalLabelEnum:
+      description: "<u>Indication of a pricing label</u>: <br>            \n<table>\n\
+        \  <tr><td>best</td>      <td>The \"best\" option (balanced between quickest\
+        \ and cheapest)</td></tr>\n  <tr><td>cheapest</td>  <td>The cheapest option</td></tr>\n\
+        \  <tr><td>quickest</td>  <td>The quickest option</td></tr>\n</table>\n"
+      enum:
+      - best
+      - cheapest
+      - quickest
+      - current
+      example: best
+      type: string
+    handoffInfo:
+      description: Information about the handoff
+      example:
+        contactInfo:
+          address:
+            city: London
+            postalCode: W1S 3PT
+            addressLine1: 32 Saville Row
+          phone: +447883196637
+          name: name
+        walkingDistanceMeters: 100
+        handoffTime:
+          start: 2022-07-21T10:20:28Z
+          end: 2022-07-21T17:32:28Z
+      properties:
+        contactInfo:
+          $ref: '#/components/schemas/handoffContactInfo'
+        handoffTime:
+          $ref: '#/components/schemas/optionalTimeWindow'
+        walkingDistanceMeters:
+          description: walking distance in meters
+          example: 100
+          format: int64
+          type: integer
+      required:
+      - contactInfo
+      - handoffTime
+      - walkingDistanceMeters
+      type: object
+    handoffContactInfo:
+      description: Information about the handoff contact info
+      example:
+        address:
+          city: London
+          postalCode: W1S 3PT
+          addressLine1: 32 Saville Row
+        phone: +447883196637
+        name: name
+      properties:
+        name:
+          type: string
+        phone:
+          description: A phone number of the handoff receiver (leader)
+          example: +447883196637
+          type: string
+        address:
+          $ref: '#/components/schemas/addressComponents'
+      required:
+      - address
+      - name
+      - phone
+      type: object
+    addressComponents:
+      description: An address
+      example:
+        city: London
+        postalCode: W1S 3PT
+        addressLine1: 32 Saville Row
+      properties:
+        addressLine1:
+          description: Street and house number for the address
+          example: 32 Saville Row
+          type: string
+        city:
+          description: The city for the address
+          example: London
+          type: string
+        postalCode:
+          description: The postal code for the address
+          example: W1S 3PT
+          type: string
+      type: object
+    optionalTimeWindow:
+      description: A slot of time
+      example:
+        start: 2022-07-21T10:20:28Z
+        end: 2022-07-21T17:32:28Z
+      properties:
+        start:
+          description: The start time in ISO8601 format
+          example: 2022-07-21T10:20:28Z
+          format: date-time
+          type: string
+          x-oapi-codegen-extra-tags:
+            csv: start
+        end:
+          description: The end time in ISO8601 format
+          example: 2022-07-21T17:32:28Z
+          format: date-time
+          type: string
+          x-oapi-codegen-extra-tags:
+            csv: end
+      type: object
+    proposalResponse:
+      description: Proposals response for a proposal retrieval request
+      example:
+        proposal:
+          pickupLocationId: f9bc2fad-fa53-1279-8fe5-f4fbe24c6ecc
+          estimatedDropoff:
+            start: 2022-07-21T10:20:28Z
+            end: 2022-07-21T17:32:28Z
+          origin:
+            city: London
+            geoLocation:
+              lng: -0.140666
+              lat: 51.511221
+            postalCode: W1S 3PT
+            addressLine1: 32 Saville Row
+            addressLine2: "12"
+            type: store
+          destination:
+            city: London
+            geoLocation:
+              lng: -0.140666
+              lat: 51.511221
+            postalCode: W1S 3PT
+            addressLine1: 32 Saville Row
+            addressLine2: "12"
+            type: store
+          deliveryCompany: Evermile
+          priceLevel: 1
+          type: deliverTogether
+          dropoffWindowType: scheduledWindow
+          labels:
+          - best
+          - best
+          creditBack: 50
+          handoffInfo:
+            contactInfo:
+              address:
+                city: London
+                postalCode: W1S 3PT
+                addressLine1: 32 Saville Row
+              phone: +447883196637
+              name: name
+            walkingDistanceMeters: 100
+            handoffTime:
+              start: 2022-07-21T10:20:28Z
+              end: 2022-07-21T17:32:28Z
+          price:
+            discount:
+              reason: deliverTogether
+              discountPercent: 15
+              listPriceCents: 500
+            currency: GBP
+            value: 500
+          priceVat:
+            discount:
+              reason: deliverTogether
+              discountPercent: 15
+              listPriceCents: 500
+            currency: GBP
+            value: 500
+          id: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6ecc
+          estimatedPickup:
+            start: 2022-07-21T10:20:28Z
+            end: 2022-07-21T17:32:28Z
+        validUntil: 2022-07-21T10:35:28Z
+      properties:
+        proposal:
+          $ref: '#/components/schemas/proposal'
+        validUntil:
+          description: Proposals are valid until this time in ISO8601 format
+          example: 2022-07-21T10:35:28Z
+          format: date-time
+          type: string
+      required:
+      - proposal
+      - validUntil
+      type: object
+    orderRequest:
+      description: Parameters for an order request
+      properties:
+        proposalId:
+          description: The proposal ID to create order from
+          example: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6ecc
+          format: uuid
+          type: string
+        externalOrderId:
+          default: ""
+          description: An external order ID to attach to this order
+          example: Order_1234
+          type: string
+        pickupContactDetails:
+          $ref: '#/components/schemas/contactDetails'
+        pickupLocationId:
+          description: The id of an existing sender location with the sender contact
+            details
+          example: f9bc2fad-fa53-1279-8fe5-f4fbe24c6ecc
+          format: uuid
+          type: string
+        dropoffContactDetails:
+          $ref: '#/components/schemas/contactDetails'
+        useCredits:
+          default: false
+          description: Whether to use available credits to pay for order
+          example: false
+          type: boolean
+        proofOfDeliveryRequirement:
+          description: "Proof of delivery requirements for a parcel, Optional. Will\
+            \ override any POD passed in on the quote"
+          example:
+          - signature
+          - photoId
+          items:
+            $ref: '#/components/schemas/proofOfDeliveryRequirement'
+          type: array
+      required:
+      - dropoffContactDetails
+      - proposalId
+      - useCredits
+      type: object
+    contactDetails:
+      description: The contact details at the address
+      properties:
+        contactName:
+          description: The name of the contact person at address
+          example: John Smith
+          type: string
+          x-oapi-codegen-extra-tags:
+            csv: Name
+        contactPhone:
+          description: The phone number of the contact person at address
+          example: "447883196637"
+          type: string
+          x-oapi-codegen-extra-tags:
+            csv: Phone Number
+        contactEmail:
+          description: The email address of the contact person at address
+          example: johnsmith@email.com
+          type: string
+          x-oapi-codegen-extra-tags:
+            csv: Email
+        locationCompanyName:
+          description: The name of the company at address
+          example: "Acme, Inc."
+          type: string
+          x-oapi-codegen-extra-tags:
+            csv: Company Name
+        instructions:
+          description: Instructions for delivery
+          example: Please ring extension 1234 at the lobby
+          type: string
+          x-oapi-codegen-extra-tags:
+            csv: Instructions
+        addressLine2:
+          description: Additional contact address details such as flat number
+          example: flat 12
+          type: string
+          x-oapi-codegen-extra-tags:
+            csv: Address Line 2
+      required:
+      - contactEmail
+      - contactName
+      type: object
+    orderDetails:
+      description: The details of a booked order
+      example:
+        instructions: Fragile! Handle with care
+        notes:
+        - notes
+        - notes
+        trackingUrl: https://tracking.evermile.io/order/f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6edd
+        origin:
+          city: London
+          geoLocation:
+            lng: -0.140666
+            lat: 51.511221
+          postalCode: W1S 3PT
+          addressLine1: 32 Saville Row
+          addressLine2: "12"
+          type: store
+        customerTrackingUrl: https://evml.io/FDS34RE2
+        destination:
+          city: London
+          geoLocation:
+            lng: -0.140666
+            lat: 51.511221
+          postalCode: W1S 3PT
+          addressLine1: 32 Saville Row
+          addressLine2: "12"
+          type: store
+        communicatedPickup:
+          start: 2022-07-21T10:20:28Z
+          end: 2022-07-21T17:32:28Z
+        actualDropoff: 2022-07-21T11:15:28Z
+        merchantName: The Magic Wine Store
+        actualPickup: 2022-07-21T10:25:28Z
+        orderTrackingInfo:
+          courierName: John Smith
+          dropoffWindowEnd: 2023-01-02T10:20:28Z
+          pickupWindowEnd: 2023-01-02T10:20:28Z
+          dropoffWindowStart: 2023-01-02T10:20:28Z
+          pickupEta: 2023-01-02T10:20:28Z
+          isCourierAssigned: true
+          pickupWindowStart: 2023-01-02T10:20:28Z
+          courierPhone: +447883196637
+          courierLocation:
+            lng: -0.140666
+            lat: 51.511221
+          dropoffEta: 2023-01-02T10:20:28Z
+          vehicleType: null
+        handoffInfo:
+          contactInfo:
+            address:
+              city: London
+              postalCode: W1S 3PT
+              addressLine1: 32 Saville Row
+            phone: +447883196637
+            name: name
+          walkingDistanceMeters: 100
+          handoffTime:
+            start: 2022-07-21T10:20:28Z
+            end: 2022-07-21T17:32:28Z
+        labelRequired: true
+        storeName: The Magic Wine Store
+        proofOfDelivery:
+        - urls:
+          - https://myproofofdelivery/signature1
+          - https://myproofofdelivery/signature1
+          type: signature
+        - urls:
+          - https://myproofofdelivery/signature1
+          - https://myproofofdelivery/signature1
+          type: signature
+        id: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6edd
+        usedCredits: true
+        value:
+          discount:
+            reason: deliverTogether
+            discountPercent: 15
+            listPriceCents: 500
+          currency: GBP
+          value: 500
+        proofOfDeliveryRequirement:
+        - signature
+        - photoId
+        pickupEta: 2022-07-21T10:25:28Z
+        externalOrderId: Order_1234
+        storeId: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6edd
+        deliveryCompany: Evermile
+        dropoffEta: 2022-07-21T12:15:28Z
+        courierLocation:
+          lng: -0.140666
+          lat: 51.511221
+        communicatedDropoff:
+          start: 2022-07-21T10:20:28Z
+          end: 2022-07-21T17:32:28Z
+        handling:
+        - alcohol
+        - fluids
+        - fragile
+        handoffType: receive
+        status:
+          reporting_time: 2022-07-21T10:20:28Z
+          orderStatus: ReadyToCollect
+          reporter: John
+          manuallyUpdated: true
+        customer:
+          phone: "447883196637"
+          name: name
+          email: johnsmith@email.com
+        parcels:
+        - parcelType: Package
+          itemsList:
+          - quantity: 1
+            description: Bottle of wine
+            sku: SK43234
+            value:
+              discount:
+                reason: deliverTogether
+                discountPercent: 15
+                listPriceCents: 500
+              currency: GBP
+              value: 500
+            weightKg: 2.3
+          - quantity: 1
+            description: Bottle of wine
+            sku: SK43234
+            value:
+              discount:
+                reason: deliverTogether
+                discountPercent: 15
+                listPriceCents: 500
+              currency: GBP
+              value: 500
+            weightKg: 2.3
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          weightKg: 2.3
+          dimensions:
+            name: M
+            widthCm: 8.25
+            heightCm: 5.1
+            lengthCm: 10.25
+        - parcelType: Package
+          itemsList:
+          - quantity: 1
+            description: Bottle of wine
+            sku: SK43234
+            value:
+              discount:
+                reason: deliverTogether
+                discountPercent: 15
+                listPriceCents: 500
+              currency: GBP
+              value: 500
+            weightKg: 2.3
+          - quantity: 1
+            description: Bottle of wine
+            sku: SK43234
+            value:
+              discount:
+                reason: deliverTogether
+                discountPercent: 15
+                listPriceCents: 500
+              currency: GBP
+              value: 500
+            weightKg: 2.3
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          weightKg: 2.3
+          dimensions:
+            name: M
+            widthCm: 8.25
+            heightCm: 5.1
+            lengthCm: 10.25
+      properties:
+        id:
+          description: The ID of the order
+          example: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6edd
+          format: uuid
+          type: string
+        externalOrderId:
+          description: An external order ID attached to this order
+          example: Order_1234
+          type: string
+        storeId:
+          description: The ID of the e-commerce store for this order (if exists)
+          example: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6edd
+          format: uuid
+          type: string
+        storeName:
+          description: The name of the store for this order (if exists)
+          example: The Magic Wine Store
+          type: string
+        status:
+          $ref: '#/components/schemas/orderExtendedStatus'
+        communicatedPickup:
+          $ref: '#/components/schemas/deliverySlot'
+        communicatedDropoff:
+          $ref: '#/components/schemas/deliverySlot'
+        actualPickup:
+          description: The actual pickup time in ISO8601 format (for packages picked
+            up)
+          example: 2022-07-21T10:25:28Z
+          format: date-time
+          type: string
+        actualDropoff:
+          description: The actual dropoff time in ISO8601 format (for packages dropped
+            off)
+          example: 2022-07-21T11:15:28Z
+          format: date-time
+          type: string
+        pickupEta:
+          description: The expected pickup time (if known)
+          example: 2022-07-21T10:25:28Z
+          format: date-time
+          type: string
+        dropoffEta:
+          description: The expected dropoff time (if known)
+          example: 2022-07-21T12:15:28Z
+          format: date-time
+          type: string
+        courierLocation:
+          $ref: '#/components/schemas/geoLocation'
+        origin:
+          $ref: '#/components/schemas/address'
+        destination:
+          $ref: '#/components/schemas/address'
+        customer:
+          $ref: '#/components/schemas/customer'
+        deliveryCompany:
+          description: The company that will perform the delivery (if known)
+          example: Evermile
+          type: string
+        parcels:
+          description: The list of parcels in this order
+          items:
+            $ref: '#/components/schemas/parcel'
+          minItems: 1
+          type: array
+        value:
+          $ref: '#/components/schemas/price'
+        instructions:
+          description: Additional handling instructions for the packages
+          example: Fragile! Handle with care
+          type: string
+          x-oapi-codegen-extra-tags:
+            csv: Instructions
+        handling:
+          description: Handling instructions for a parcel
+          example:
+          - alcohol
+          - fluids
+          - fragile
+          items:
+            $ref: '#/components/schemas/handlingInstruction'
+          type: array
+        proofOfDeliveryRequirement:
+          default:
+          - none
+          description: Proof of delivery requirements for a parcel
+          example:
+          - signature
+          - photoId
+          items:
+            $ref: '#/components/schemas/proofOfDeliveryRequirement'
+          type: array
+        trackingUrl:
+          description: The carrier tracking URL for this order (if exists)
+          example: https://tracking.evermile.io/order/f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6edd
+          type: string
+        customerTrackingUrl:
+          description: The Evermile customer tracking URL for this order (if exists)
+          example: https://evml.io/FDS34RE2
+          type: string
+        orderTrackingInfo:
+          $ref: '#/components/schemas/orderTrackingInfo'
+        handoffType:
+          $ref: '#/components/schemas/handoffType'
+        handoffInfo:
+          $ref: '#/components/schemas/handoffInfo'
+        usedCredits:
+          description: Whether credits were used to pay for this order
+          example: true
+          type: boolean
+        proofOfDelivery:
+          description: Proof of delivery for an order
+          items:
+            $ref: '#/components/schemas/proofOfDelivery'
+          type: array
+        notes:
+          description: Courier notes from each delivery in this order
+          items:
+            type: string
+          type: array
+        merchantName:
+          description: The name of the merchant for this order
+          example: The Magic Wine Store
+          type: string
+        labelRequired:
+          description: Whether label is required
+          example: true
+          type: boolean
+      required:
+      - communicatedDropoff
+      - communicatedPickup
+      - currency
+      - customer
+      - destination
+      - externalOrderId
+      - handoffType
+      - id
+      - labelRequired
+      - merchantName
+      - origin
+      - parcels
+      - status
+      - usedCredits
+      - value
+      type: object
+    orderExtendedStatus:
+      description: An order status with reporting information
+      example:
+        reporting_time: 2022-07-21T10:20:28Z
+        orderStatus: ReadyToCollect
+        reporter: John
+        manuallyUpdated: true
+      properties:
+        orderStatus:
+          $ref: '#/components/schemas/orderStatus'
+        reporter:
+          description: Who reported this status
+          example: John
+          type: string
+        reporting_time:
+          description: The reporting time in ISO8601 format
+          example: 2022-07-21T10:20:28Z
+          format: date-time
+          type: string
+        manuallyUpdated:
+          description: True if the status was manually changed by the reporter
+          example: true
+          type: boolean
+      required:
+      - manuallyUpdated
+      - orderStatus
+      - reporter
+      - reporting_time
+      type: object
+    orderStatus:
+      description: "<u>The status of an order</u>: <br>            \n<table>\n  <tr><td>Pending</td>\
+        \            <td>Order is new, prior to processing</td></tr>\n  <tr><td>Packing</td>\
+        \            <td>Order is being picked and packed</td></tr>\n  <tr><td>Ready</td>\
+        \              <td>Order is ready for collection by courier</td></tr>\n  <tr><td>Collected</td>\
+        \          <td>Order was collected</td></tr>\n  <tr><td>Delivered</td>   \
+        \       <td>Order was delivered <I>(final status)</I></td></tr>\n  <tr><td>Cancelled</td>\
+        \          <td>Order was cancelled <I>(final status)</I></td></tr>\n  <tr><td>CannotFulfill</td>\
+        \      <td>Order has issues that need handling <I>(final status)</I></td></tr>\n\
+        \  <tr><td>MissingDetails</td>     <td>Order is missing required details</td></tr>\n\
+        \  <tr><td>InvalidAddress</td>     <td>Order has an invalid address</td></tr>\n\
+        \  <tr><td>Failed</td>             <td>Order delivery failed</td></tr>\n \
+        \ <tr><td>PackageMissing</td>     <td>Courier reported a package has gone\
+        \ missing</td></tr>\n  <tr><td>NeverArrived</td>       <td>A delivered package\
+        \ was reported as never arrived</td></tr>\n  <tr><td>WrongItem</td>      \
+        \    <td>A wrong item was deliverred</td></tr>\n  <tr><td>DamagedItem</td>\
+        \        <td>A damaged item was delivered</td></tr>\n  <tr><td>MissingItem</td>\
+        \        <td>An item was missing from the delivery</td></tr>\n  <tr><td>ReturningToSender</td>\
+        \  <td>Delivery failed, item is being returned to sender</td></tr>\n  <tr><td>ReturnedToSender</td>\
+        \   <td>Item has been returned to sender <I>(final status)</I></td></tr>\n\
+        \  <tr><td>ReadyForHandoff</td>    <td>Order is ready for handoff </td></tr>\n\
+        \  <tr><td>WaitingForHandoff</td>   <td></I>Order is waiting to be received</td></tr>\n\
+        </table>\n"
+      enum:
+      - Pending
+      - Packing
+      - Ready
+      - Collected
+      - OnWayToDropoff
+      - InTransit
+      - WaitingInHub
+      - Delivered
+      - Cancelled
+      - CannotFulfill
+      - MissingDetails
+      - InvalidAddress
+      - Failed
+      - PackageMissing
+      - NeverArrived
+      - WrongItem
+      - DamagedItem
+      - MissingItem
+      - ReturningToSender
+      - ReturnedToSender
+      - ReadyForHandoff
+      - WaitingForHandoff
+      example: ReadyToCollect
+      type: string
+    customer:
+      description: Customer details
+      example:
+        phone: "447883196637"
+        name: name
+        email: johnsmith@email.com
+      properties:
+        name:
+          description: The customer name
+          type: string
+        phone:
+          description: The phone number of the contact person at address
+          example: "447883196637"
+          type: string
+        email:
+          description: The email address of the contact person at address
+          example: johnsmith@email.com
+          type: string
+      required:
+      - name
+      type: object
+    orderTrackingInfo:
+      description: Live tracking info for an order
+      example:
+        courierName: John Smith
+        dropoffWindowEnd: 2023-01-02T10:20:28Z
+        pickupWindowEnd: 2023-01-02T10:20:28Z
+        dropoffWindowStart: 2023-01-02T10:20:28Z
+        pickupEta: 2023-01-02T10:20:28Z
+        isCourierAssigned: true
+        pickupWindowStart: 2023-01-02T10:20:28Z
+        courierPhone: +447883196637
+        courierLocation:
+          lng: -0.140666
+          lat: 51.511221
+        dropoffEta: 2023-01-02T10:20:28Z
+        vehicleType: null
+      properties:
+        courierLocation:
+          $ref: '#/components/schemas/geoLocation'
+        dropoffEta:
+          description: The dropoff ETA in ISO8601 format
+          example: 2023-01-02T10:20:28Z
+          format: date-time
+          type: string
+        pickupEta:
+          description: The pickup ETA in ISO8601 format
+          example: 2023-01-02T10:20:28Z
+          format: date-time
+          type: string
+        courierName:
+          description: The courier full name
+          example: John Smith
+          type: string
+        courierPhone:
+          description: The courier phone number
+          example: +447883196637
+          type: string
+        dropoffWindowStart:
+          description: The updated dropoff widnow start in ISO8601 format
+          example: 2023-01-02T10:20:28Z
+          format: date-time
+          type: string
+        dropoffWindowEnd:
+          description: The updated dropoff window end in ISO8601 format
+          example: 2023-01-02T10:20:28Z
+          format: date-time
+          type: string
+        pickupWindowStart:
+          description: The updated pickup widnow start in ISO8601 format
+          example: 2023-01-02T10:20:28Z
+          format: date-time
+          type: string
+        pickupWindowEnd:
+          description: The updated pickup window end in ISO8601 format
+          example: 2023-01-02T10:20:28Z
+          format: date-time
+          type: string
+        isCourierAssigned:
+          description: Indicate whether a courier is assigned for this order
+          example: true
+          type: boolean
+        vehicleType:
+          $ref: '#/components/schemas/vehicleType'
+      required:
+      - isCourierAssigned
+      type: object
+    handoffType:
+      enum:
+      - none
+      - receive
+      - handoff
+      example: receive
+      type: string
+    proofOfDelivery:
+      example:
+        urls:
+        - https://myproofofdelivery/signature1
+        - https://myproofofdelivery/signature1
+        type: signature
+      properties:
+        type:
+          description: The type of the proof of delivery
+          enum:
+          - signature
+          - photo
+          - photoId
+          example: signature
+          type: string
+        urls:
+          description: urls list of the specific proof type
+          items:
+            description: url
+            example: https://myproofofdelivery/signature1
+            type: string
+          type: array
+      required:
+      - type
+      type: object
+    orderListItem:
+      description: An order item
+      example:
+        dropoffAddress: "53 Carey St, London WC2A 2JB, United Kingdom"
+        updatedTime: 2022-07-21T12:20:28Z
+        parcelsCount: 1
+        totalItems: 15
+        labelPrintTime: 2022-07-21T12:21:28Z
+        notes: Building code is 5555*
+        creationTime: 2022-07-21T10:20:28Z
+        aggregationId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        externalOrderId: externalOrderId
+        storeId: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6edd
+        carrier: "Delivery Partners, Ltd."
+        orderTrackingInfo:
+          courierName: John Smith
+          dropoffWindowEnd: 2023-01-02T10:20:28Z
+          pickupWindowEnd: 2023-01-02T10:20:28Z
+          dropoffWindowStart: 2023-01-02T10:20:28Z
+          pickupEta: 2023-01-02T10:20:28Z
+          isCourierAssigned: true
+          pickupWindowStart: 2023-01-02T10:20:28Z
+          courierPhone: +447883196637
+          courierLocation:
+            lng: -0.140666
+            lat: 51.511221
+          dropoffEta: 2023-01-02T10:20:28Z
+          vehicleType: null
+        dropoffWindow:
+          start: 1654086400
+          end: 1654086800
+        handoffInfo:
+          contactInfo:
+            address:
+              city: London
+              postalCode: W1S 3PT
+              addressLine1: 32 Saville Row
+            phone: +447883196637
+            name: name
+          walkingDistanceMeters: 100
+          handoffTime:
+            start: 2022-07-21T10:20:28Z
+            end: 2022-07-21T17:32:28Z
+        labelRequired: true
+        pickupWindow:
+          start: 1654086400
+          end: 1654086800
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        handoffType: receive
+        usedCredits: true
+        value:
+          discount:
+            reason: deliverTogether
+            discountPercent: 15
+            listPriceCents: 500
+          currency: GBP
+          value: 500
+        status:
+          reporting_time: 2022-07-21T10:20:28Z
+          orderStatus: ReadyToCollect
+          reporter: John
+          manuallyUpdated: true
+        customer:
+          phone: "447883196637"
+          name: name
+          email: johnsmith@email.com
+      properties:
+        id:
+          description: The order ID
+          format: uuid
+          type: string
+        pickupWindow:
+          $ref: '#/components/schemas/timeWindow'
+        carrier:
+          description: The carrier name
+          example: "Delivery Partners, Ltd."
+          type: string
+        totalItems:
+          description: The total number of items
+          example: 15
+          format: int32
+          type: integer
+        value:
+          $ref: '#/components/schemas/price'
+        status:
+          $ref: '#/components/schemas/orderExtendedStatus'
+        creationTime:
+          description: The order original creation time in ISO8601 format
+          example: 2022-07-21T10:20:28Z
+          format: date-time
+          type: string
+        updatedTime:
+          description: The order last update time in ISO8601 format
+          example: 2022-07-21T12:20:28Z
+          format: date-time
+          type: string
+        labelPrintTime:
+          description: The last time a label was printed in ISO8601 format
+          example: 2022-07-21T12:21:28Z
+          format: date-time
+          type: string
+        dropoffAddress:
+          description: The dropoff address
+          example: "53 Carey St, London WC2A 2JB, United Kingdom"
+          type: string
+        dropoffWindow:
+          $ref: '#/components/schemas/timeWindow'
+        customer:
+          $ref: '#/components/schemas/customer'
+        notes:
+          description: The dropoff note
+          example: Building code is 5555*
+          type: string
+        aggregationId:
+          description: The aggregation ID
+          format: uuid
+          type: string
+        parcelsCount:
+          description: The number of parcels in this order
+          example: 1
+          format: int32
+          type: integer
+        externalOrderId:
+          description: An external order ID attached to this order
+          type: string
+        storeId:
+          description: The ID of the e-commerce store for this order (if exists)
+          example: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6edd
+          format: uuid
+          type: string
+        orderTrackingInfo:
+          $ref: '#/components/schemas/orderTrackingInfo'
+        handoffType:
+          $ref: '#/components/schemas/handoffType'
+        handoffInfo:
+          $ref: '#/components/schemas/handoffInfo'
+        usedCredits:
+          description: Whether credits were used to pay for this order
+          example: true
+          type: boolean
+        labelRequired:
+          description: Whether label is required
+          example: true
+          type: boolean
+      required:
+      - aggregationId
+      - carrier
+      - creationTime
+      - currency
+      - customer
+      - dropofWindow
+      - dropoffAddress
+      - externalOrderId
+      - handoffType
+      - id
+      - labelRequired
+      - packageDimensions
+      - parcelsCount
+      - pickupWindow
+      - status
+      - totalItems
+      - usedCredits
+      - value
+      type: object
+    timeWindow:
+      description: A window of time
+      example:
+        start: 1654086400
+        end: 1654086800
+      properties:
+        start:
+          description: The start of the window in Unix epoch format
+          example: 1654086400
+          format: int64
+          type: integer
+        end:
+          description: The end of the window in Unix epoch format
+          example: 1654086800
+          format: int64
+          type: integer
+      required:
+      - end
+      - start
+      type: object
+    locationTypeEnum:
+      default: pickup
+      description: the type of location being referred to
+      enum:
+      - pickup
+      - info
+      example: pickup
+      type: string
+    locationsResponse:
+      description: Response for a locations request
+      example:
+        locations:
+        - null
+        - null
+      properties:
+        locations:
+          items:
+            $ref: '#/components/schemas/locationWithId'
+          type: array
+      required:
+      - locations
+      type: object
+    locationWithId:
+      allOf:
+      - $ref: '#/components/schemas/locationWithId_allOf'
+      - $ref: '#/components/schemas/location'
+      description: A location with an ID property
+      type: object
+    location:
+      description: The location details
+      properties:
+        name:
+          description: An informative name for this location
+          example: The central warehouse
+          type: string
+        address:
+          $ref: '#/components/schemas/address'
+        phone:
+          description: A phone number for this location (relevant when location is
+            used as sender_info)
+          example: +447883196637
+          type: string
+        email:
+          description: An email of the contact person for this location (relevant
+            when location is used as sender_info)
+          example: test@example.com
+          type: string
+        notes:
+          description: Additional notes to describe this location
+          example: Entrance from the western side. Code is 1234.
+          type: string
+        isDefault:
+          description: True if this is the default location
+          example: true
+          type: boolean
+        id:
+          description: The location's evermile ID. Used for updating a location (if
+            provided)
+          format: uuid
+          type: string
+        storeId:
+          description: A store ID associated with this location
+          format: uuid
+          type: string
+        schedule:
+          $ref: '#/components/schemas/locationWeeklySchedule'
+      required:
+      - address
+      - name
+      type: object
+    locationWeeklySchedule:
+      description: A weekly schedule for a location opening hours
+      properties:
+        monday:
+          $ref: '#/components/schemas/locationTimeWindow'
+        tuesday:
+          $ref: '#/components/schemas/locationTimeWindow'
+        wednesday:
+          $ref: '#/components/schemas/locationTimeWindow'
+        thursday:
+          $ref: '#/components/schemas/locationTimeWindow'
+        friday:
+          $ref: '#/components/schemas/locationTimeWindow'
+        saturday:
+          $ref: '#/components/schemas/locationTimeWindow'
+        sunday:
+          $ref: '#/components/schemas/locationTimeWindow'
+      type: object
+    locationTimeWindow:
+      description: A time window during which a location is open for pickups
+      properties:
+        isOpen:
+          default: true
+          description: Whether the location is open or not
+          example: true
+          type: boolean
+        openWindowStart:
+          description: The time when this location opens in HH:MM format
+          example: 10:00
+          pattern: "^\\d{2}:\\d{2}$"
+          type: string
+        openWindowEnd:
+          description: The time when this location closes in HH:MM format
+          example: 18:00
+          pattern: "^\\d{2}:\\d{2}$"
+          type: string
+      required:
+      - isOpen
+      - openWindowEnd
+      - openWindowStart
+      type: object
+    locationReq:
+      $ref: '#/components/schemas/location_1'
+    location_1:
+      description: The location details
+      properties:
+        name:
+          description: An informative name for this location
+          example: The central warehouse
+          type: string
+        address:
+          $ref: '#/components/schemas/address_1'
+        phone:
+          description: A phone number for this location (relevant when location is
+            used as sender_info)
+          example: +447883196637
+          type: string
+        email:
+          description: An email of the contact person for this location (relevant
+            when location is used as sender_info)
+          example: test@example.com
+          type: string
+        notes:
+          description: Additional notes to describe this location
+          example: Entrance from the western side. Code is 1234.
+          type: string
+        isDefault:
+          description: True if this is the default location
+          example: true
+          type: boolean
+        id:
+          description: The location's evermile ID. Used for updating a location (if
+            provided)
+          format: uuid
+          type: string
+        storeId:
+          description: A store ID associated with this location
+          format: uuid
+          type: string
+        schedule:
+          $ref: '#/components/schemas/locationWeeklySchedule_1'
+      required:
+      - address
+      - name
+      type: object
+    address_1:
+      description: An address for picking up or dropping off
+      properties:
+        addressLine1:
+          description: Street and house number for the address
+          example: 32 Saville Row
+          type: string
+          x-oapi-codegen-extra-tags:
+            csv: Address Line 1
+        addressLine2:
+          description: Additional address details such as flat number
+          example: "12"
+          type: string
+          x-oapi-codegen-extra-tags:
+            csv: Address Line 2
+        city:
+          description: The city for the address
+          example: London
+          type: string
+          x-oapi-codegen-extra-tags:
+            csv: City
+        postalCode:
+          description: The postal code for the address
+          example: W1S 3PT
+          type: string
+          x-oapi-codegen-extra-tags:
+            csv: Postal Code
+        geoLocation:
+          $ref: '#/components/schemas/geoLocation'
+        type:
+          $ref: '#/components/schemas/addressType'
+      required:
+      - addressLine1
+      - city
+      - postalCode
+      - type
+      type: object
+    locationWeeklySchedule_1:
+      description: A weekly schedule for a location opening hours
+      properties:
+        monday:
+          $ref: '#/components/schemas/locationTimeWindow'
+        tuesday:
+          $ref: '#/components/schemas/locationTimeWindow'
+        wednesday:
+          $ref: '#/components/schemas/locationTimeWindow'
+        thursday:
+          $ref: '#/components/schemas/locationTimeWindow'
+        friday:
+          $ref: '#/components/schemas/locationTimeWindow'
+        saturday:
+          $ref: '#/components/schemas/locationTimeWindow'
+        sunday:
+          $ref: '#/components/schemas/locationTimeWindow'
+      type: object
+    locationResp:
+      example:
+        id: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6edc
+      properties:
+        id:
+          description: The new delivery location ID
+          example: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6edc
+          format: uuid
+          type: string
+      required:
+      - id
+      type: object
+    invalidAddressBody:
+      properties:
+        message:
+          description: The error message
+          example: Could not find a match
+          type: string
+        input:
+          $ref: '#/components/schemas/addressComponents'
+      required:
+      - input
+      type: object
+    webhookTopic:
+      description: |
+        <u>The webhook topic</u>: <br>
+        <table>
+          <tr><td>order.created</td>        <td>A new order was created</td></tr>
+          <tr><td>order.updated</td>        <td>An order was updated</td></tr>
+          <tr><td>order.cancelled</td>      <td>An order was cancelled</td></tr>
+          <tr><td>order.collected</td>      <td>An order was collected from the pickup location</td></tr>
+          <tr><td>order.delivered</td>      <td>An order was delivered to the end customer</td></tr>
+          <tr><td>order.failed</td>         <td>An order delivery failed</td></tr>
+          <tr><td>delivery.liveUpdate</td>  <td>A live update of an ongoing delivery</td></tr>
+        </table>
+      enum:
+      - order.created
+      - order.updated
+      - order.cancelled
+      - order.collected
+      - order.delivered
+      - order.failed
+      - delivery.liveUpdate
+      example: order.delivered
+      type: string
+    webhookGetResponse:
+      description: The response for a get all webhooks request
+      example:
+        webhooks:
+        - authHeader: X-Auth-From-Evermile
+          authHeaderKey: This is Me!
+          topic: order.delivered
+          id: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c63ad
+          url: https://my.shop.com/webhook
+          lastSuccess: 2022-12-05T10:20:28Z
+          status: enabled
+          failuresSinceLastSuccess: 0
+        - authHeader: X-Auth-From-Evermile
+          authHeaderKey: This is Me!
+          topic: order.delivered
+          id: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c63ad
+          url: https://my.shop.com/webhook
+          lastSuccess: 2022-12-05T10:20:28Z
+          status: enabled
+          failuresSinceLastSuccess: 0
+      properties:
+        webhooks:
+          description: The list of webhooks
+          items:
+            $ref: '#/components/schemas/webhook'
+          type: array
+      type: object
+    webhook:
+      description: Details for a registered webhook
+      example:
+        authHeader: X-Auth-From-Evermile
+        authHeaderKey: This is Me!
+        topic: order.delivered
+        id: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c63ad
+        url: https://my.shop.com/webhook
+        lastSuccess: 2022-12-05T10:20:28Z
+        status: enabled
+        failuresSinceLastSuccess: 0
+      properties:
+        id:
+          description: The Evermile ID for this webhook
+          example: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c63ad
+          format: uuid
+          type: string
+        topic:
+          $ref: '#/components/schemas/webhookTopic'
+        url:
+          description: The registered webhook URL.
+          example: https://my.shop.com/webhook
+          format: url
+          type: string
+        status:
+          description: |
+            <u>The webhook status</u>: <br>
+            <table>
+              <tr><td>enabled</td>     <td>The webhook is active</td></tr>
+              <tr><td>disabled</td>    <td>The webhook is disabled (due to too many delivery failures</td></tr>
+            </table>
+          enum:
+          - enabled
+          - disabled
+          type: string
+        lastSuccess:
+          description: "The last time the webhook call was successful, in ISO8601\
+            \ format"
+          example: 2022-12-05T10:20:28Z
+          format: date-time
+          type: string
+        failuresSinceLastSuccess:
+          description: The number of failures in calling the webhook since the last
+            success
+          example: 0
+          format: int32
+          minimum: 0
+          type: integer
+        authHeader:
+          description: The header to use for sending a secret string authenticating
+            a webhook call
+          example: X-Auth-From-Evermile
+          type: string
+        authHeaderKey:
+          description: The key to set in the header
+          example: This is Me!
+          type: string
+      required:
+      - authHeader
+      - authHeaderKey
+      - failuresSinceLastSuccess
+      - id
+      - status
+      - topic
+      - url
+      type: object
+    webhookRequest:
+      description: A request for creating a webhook
+      properties:
+        topic:
+          $ref: '#/components/schemas/webhookTopic'
+        url:
+          description: The URL to send the webhook to. Must be an **https** endpoint
+          example: https://my.shop.com/webhook
+          format: url
+          type: string
+        authHeader:
+          description: A header to use for sending a secret string authenticating
+            a webhook call
+          example: X-Auth-From-Evermile
+          type: string
+        authHeaderKey:
+          description: The key to set in the header
+          example: This is Me!
+          type: string
+      required:
+      - authHeader
+      - authHeaderKey
+      - topics
+      - url
+      type: object
+    webhookPostResponse:
+      description: The response from a webhook creation request
+      example:
+        webhook:
+          authHeader: X-Auth-From-Evermile
+          authHeaderKey: This is Me!
+          topic: order.delivered
+          id: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c63ad
+          url: https://my.shop.com/webhook
+          lastSuccess: 2022-12-05T10:20:28Z
+          status: enabled
+          failuresSinceLastSuccess: 0
+        secret: ""
+      properties:
+        webhook:
+          $ref: '#/components/schemas/webhook'
+        secret:
+          description: The public key from a keypair used to validate the HMAC signature
+            for a call from this webhook.
+          example: ""
+          type: string
+      required:
+      - secret
+      - webhook
+      type: object
+    orderCreatedCallbackResp:
+      properties:
+        timestamp:
+          description: The time this callback was sent in ISO8601 format
+          example: 2022-12-05T10:22:28Z
+          format: date-time
+          type: string
+        order:
+          $ref: '#/components/schemas/orderDetails_1'
+      required:
+      - order
+      - timestamp
+      type: object
+    callbackTimestamp:
+      description: The time this callback was sent in ISO8601 format
+      example: 2022-12-05T10:22:28Z
+      format: date-time
+      type: string
+    orderDetails_1:
+      description: The details of a booked order
+      properties:
+        id:
+          description: The ID of the order
+          example: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6edd
+          format: uuid
+          type: string
+        externalOrderId:
+          description: An external order ID attached to this order
+          example: Order_1234
+          type: string
+        storeId:
+          description: The ID of the e-commerce store for this order (if exists)
+          example: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6edd
+          format: uuid
+          type: string
+        storeName:
+          description: The name of the store for this order (if exists)
+          example: The Magic Wine Store
+          type: string
+        status:
+          $ref: '#/components/schemas/orderExtendedStatus_1'
+        communicatedPickup:
+          $ref: '#/components/schemas/deliverySlot'
+        communicatedDropoff:
+          $ref: '#/components/schemas/deliverySlot'
+        actualPickup:
+          description: The actual pickup time in ISO8601 format (for packages picked
+            up)
+          example: 2022-07-21T10:25:28Z
+          format: date-time
+          type: string
+        actualDropoff:
+          description: The actual dropoff time in ISO8601 format (for packages dropped
+            off)
+          example: 2022-07-21T11:15:28Z
+          format: date-time
+          type: string
+        pickupEta:
+          description: The expected pickup time (if known)
+          example: 2022-07-21T10:25:28Z
+          format: date-time
+          type: string
+        dropoffEta:
+          description: The expected dropoff time (if known)
+          example: 2022-07-21T12:15:28Z
+          format: date-time
+          type: string
+        courierLocation:
+          $ref: '#/components/schemas/geoLocation'
+        origin:
+          $ref: '#/components/schemas/address_2'
+        destination:
+          $ref: '#/components/schemas/address_2'
+        customer:
+          $ref: '#/components/schemas/customer'
+        deliveryCompany:
+          description: The company that will perform the delivery (if known)
+          example: Evermile
+          type: string
+        parcels:
+          description: The list of parcels in this order
+          items:
+            $ref: '#/components/schemas/parcel_1'
+          minItems: 1
+          type: array
+        value:
+          $ref: '#/components/schemas/price_1'
+        instructions:
+          description: Additional handling instructions for the packages
+          example: Fragile! Handle with care
+          type: string
+          x-oapi-codegen-extra-tags:
+            csv: Instructions
+        handling:
+          description: Handling instructions for a parcel
+          example:
+          - alcohol
+          - fluids
+          - fragile
+          items:
+            $ref: '#/components/schemas/handlingInstruction'
+          type: array
+        proofOfDeliveryRequirement:
+          default:
+          - none
+          description: Proof of delivery requirements for a parcel
+          example:
+          - signature
+          - photoId
+          items:
+            $ref: '#/components/schemas/proofOfDeliveryRequirement'
+          type: array
+        trackingUrl:
+          description: The carrier tracking URL for this order (if exists)
+          example: https://tracking.evermile.io/order/f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6edd
+          type: string
+        customerTrackingUrl:
+          description: The Evermile customer tracking URL for this order (if exists)
+          example: https://evml.io/FDS34RE2
+          type: string
+        orderTrackingInfo:
+          $ref: '#/components/schemas/orderTrackingInfo_1'
+        handoffType:
+          $ref: '#/components/schemas/handoffType'
+        handoffInfo:
+          $ref: '#/components/schemas/handoffInfo_1'
+        usedCredits:
+          description: Whether credits were used to pay for this order
+          example: true
+          type: boolean
+        proofOfDelivery:
+          description: Proof of delivery for an order
+          items:
+            $ref: '#/components/schemas/proofOfDelivery'
+          type: array
+        notes:
+          description: Courier notes from each delivery in this order
+          items:
+            type: string
+          type: array
+        merchantName:
+          description: The name of the merchant for this order
+          example: The Magic Wine Store
+          type: string
+        labelRequired:
+          description: Whether label is required
+          example: true
+          type: boolean
+      required:
+      - communicatedDropoff
+      - communicatedPickup
+      - currency
+      - customer
+      - destination
+      - externalOrderId
+      - handoffType
+      - id
+      - labelRequired
+      - merchantName
+      - origin
+      - parcels
+      - status
+      - usedCredits
+      - value
+      type: object
+    orderExtendedStatus_1:
+      description: An order status with reporting information
+      properties:
+        orderStatus:
+          $ref: '#/components/schemas/orderStatus'
+        reporter:
+          description: Who reported this status
+          example: John
+          type: string
+        reporting_time:
+          description: The reporting time in ISO8601 format
+          example: 2022-07-21T10:20:28Z
+          format: date-time
+          type: string
+        manuallyUpdated:
+          description: True if the status was manually changed by the reporter
+          example: true
+          type: boolean
+      required:
+      - manuallyUpdated
+      - orderStatus
+      - reporter
+      - reporting_time
+      type: object
+    address_2:
+      description: An address for picking up or dropping off
+      properties:
+        addressLine1:
+          description: Street and house number for the address
+          example: 32 Saville Row
+          type: string
+          x-oapi-codegen-extra-tags:
+            csv: Address Line 1
+        addressLine2:
+          description: Additional address details such as flat number
+          example: "12"
+          type: string
+          x-oapi-codegen-extra-tags:
+            csv: Address Line 2
+        city:
+          description: The city for the address
+          example: London
+          type: string
+          x-oapi-codegen-extra-tags:
+            csv: City
+        postalCode:
+          description: The postal code for the address
+          example: W1S 3PT
+          type: string
+          x-oapi-codegen-extra-tags:
+            csv: Postal Code
+        geoLocation:
+          $ref: '#/components/schemas/geoLocation'
+        type:
+          $ref: '#/components/schemas/addressType'
+      required:
+      - addressLine1
+      - city
+      - postalCode
+      - type
+      type: object
+    parcel_1:
+      description: Data about the parcel
+      properties:
+        id:
+          description: The id of the parcel object in evermile db
+          format: uuid
+          type: string
+        dimensions:
+          $ref: '#/components/schemas/dimensions'
+        weightKg:
+          description: Weight of the package in Kilograms
+          example: 2.3
+          format: float
+          type: number
+          x-oapi-codegen-extra-tags:
+            csv: Weight (kg)
+        parcelType:
+          $ref: '#/components/schemas/parcelType'
+        itemsList:
+          items:
+            $ref: '#/components/schemas/item_1'
+          minItems: 1
+          type: array
+      required:
+      - dimensions
+      - parcelType
+      - weightKg
+      type: object
+    item_1:
+      description: A single item inside a package
+      properties:
+        description:
+          description: What the item is
+          example: Bottle of wine
+          type: string
+          x-oapi-codegen-extra-tags:
+            csv: Description
+        value:
+          $ref: '#/components/schemas/price_1'
+        quantity:
+          default: 1
+          description: The number of these items in a parcel
+          example: 1
+          format: int32
+          type: integer
+        sku:
+          description: An optional SKU for this item
+          example: SK43234
+          type: string
+        weightKg:
+          description: Weight of the item in Kilograms
+          example: 2.3
+          format: double
+          type: number
+      required:
+      - description
+      - quantity
+      - value
+      type: object
+    price_1:
+      description: A price object
+      properties:
+        value:
+          description: The item's value in cents/pence. E.G. "500" = 5 GBP
+          example: 500
+          format: int64
+          type: integer
+        currency:
+          example: GBP
+          type: string
+        discount:
+          $ref: '#/components/schemas/discount'
+      required:
+      - currency
+      - value
+      type: object
+    orderTrackingInfo_1:
+      description: Live tracking info for an order
+      properties:
+        courierLocation:
+          $ref: '#/components/schemas/geoLocation'
+        dropoffEta:
+          description: The dropoff ETA in ISO8601 format
+          example: 2023-01-02T10:20:28Z
+          format: date-time
+          type: string
+        pickupEta:
+          description: The pickup ETA in ISO8601 format
+          example: 2023-01-02T10:20:28Z
+          format: date-time
+          type: string
+        courierName:
+          description: The courier full name
+          example: John Smith
+          type: string
+        courierPhone:
+          description: The courier phone number
+          example: +447883196637
+          type: string
+        dropoffWindowStart:
+          description: The updated dropoff widnow start in ISO8601 format
+          example: 2023-01-02T10:20:28Z
+          format: date-time
+          type: string
+        dropoffWindowEnd:
+          description: The updated dropoff window end in ISO8601 format
+          example: 2023-01-02T10:20:28Z
+          format: date-time
+          type: string
+        pickupWindowStart:
+          description: The updated pickup widnow start in ISO8601 format
+          example: 2023-01-02T10:20:28Z
+          format: date-time
+          type: string
+        pickupWindowEnd:
+          description: The updated pickup window end in ISO8601 format
+          example: 2023-01-02T10:20:28Z
+          format: date-time
+          type: string
+        isCourierAssigned:
+          description: Indicate whether a courier is assigned for this order
+          example: true
+          type: boolean
+        vehicleType:
+          $ref: '#/components/schemas/vehicleType'
+      required:
+      - isCourierAssigned
+      type: object
+    handoffInfo_1:
+      description: Information about the handoff
+      properties:
+        contactInfo:
+          $ref: '#/components/schemas/handoffContactInfo_1'
+        handoffTime:
+          $ref: '#/components/schemas/optionalTimeWindow'
+        walkingDistanceMeters:
+          description: walking distance in meters
+          example: 100
+          format: int64
+          type: integer
+      required:
+      - contactInfo
+      - handoffTime
+      - walkingDistanceMeters
+      type: object
+    handoffContactInfo_1:
+      description: Information about the handoff contact info
+      properties:
+        name:
+          type: string
+        phone:
+          description: A phone number of the handoff receiver (leader)
+          example: +447883196637
+          type: string
+        address:
+          $ref: '#/components/schemas/addressComponents'
+      required:
+      - address
+      - name
+      - phone
+      type: object
+    orderCancelledCallbackResp:
+      properties:
+        timestamp:
+          description: The time this callback was sent in ISO8601 format
+          example: 2022-12-05T10:22:28Z
+          format: date-time
+          type: string
+        orderId:
+          description: The ID of the order
+          example: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6edd
+          format: uuid
+          type: string
+        cancellationFee:
+          $ref: '#/components/schemas/price_1'
+      required:
+      - orderId
+      - timestamp
+      type: object
+    orderCollectedCallbackResp:
+      properties:
+        timestamp:
+          description: The time this callback was sent in ISO8601 format
+          example: 2022-12-05T10:22:28Z
+          format: date-time
+          type: string
+        orderId:
+          description: The ID of the order
+          example: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6edd
+          format: uuid
+          type: string
+      required:
+      - orderId
+      - timestamp
+      type: object
+    orderDeliveredCallbackResp:
+      properties:
+        timestamp:
+          description: The time this callback was sent in ISO8601 format
+          example: 2022-12-05T10:22:28Z
+          format: date-time
+          type: string
+        orderId:
+          description: The ID of the order
+          example: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6edd
+          format: uuid
+          type: string
+      required:
+      - orderId
+      - timestamp
+      type: object
+    orderFailedCallbackResp:
+      properties:
+        timestamp:
+          description: The time this callback was sent in ISO8601 format
+          example: 2022-12-05T10:22:28Z
+          format: date-time
+          type: string
+        orderId:
+          description: The ID of the order
+          example: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6edd
+          format: uuid
+          type: string
+        failureReason:
+          description: An optional string detailing the failure reason
+          example: Customer could not be reached
+          type: string
+      required:
+      - orderId
+      - timestamp
+      type: object
+    deliveryLiveUpdateCallbackResp:
+      properties:
+        timestamp:
+          description: The time this callback was sent in ISO8601 format
+          example: 2022-12-05T10:22:28Z
+          format: date-time
+          type: string
+        orderId:
+          description: The ID of the order
+          example: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6edd
+          format: uuid
+          type: string
+        eta:
+          description: The expected delivery time
+          example: 2022-12-06T17:32:28Z
+          format: date-time
+          type: string
+        courierLocation:
+          $ref: '#/components/schemas/geoLocation'
+      required:
+      - orderId
+      - timestamp
+      type: object
+    _order__orderId__delete_402_response:
+      properties:
+        payment:
+          $ref: '#/components/schemas/price'
+        token:
+          description: "A token that should be returned in order to confirm the cancellation.\
+            \ To confirm the cancellation, pass this in an X-EVERMILE-TOKEN header."
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJvcmRlcklkIjoiZThjNGU1ZWMtZTQ1Mi00OWU3LWFlMzMtODg3NWE2ZGNmZTRjIiwicGF5bWVudCI6eyJjdXJyZW5jeSI6IkdCUCIsInZhbHVlIjoyMjh9LCJpc3MiOiJFdmVybWlsZSIsImV4cCI6MTY2MjQ1MDg4Mn0.MSqr7iuDOlS6MBFApZ58zfgasDG9t5n9J-3YydndMvQ
+          type: string
+      type: object
+    _order__orderId__patch_request:
+      properties:
+        status:
+          $ref: '#/components/schemas/orderStatus'
+      required:
+      - status
+      type: object
+    locationWithId_allOf:
+      properties:
+        id:
+          description: The location ID
+          example: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6ecc
+          format: uuid
+          type: string
+        merchantId:
+          description: The customer ID to which this location belongs
+          example: f9bc2fa1-fa33-4b79-8fe5-f4fbe24c6ecc
+          format: uuid
+          type: string
+      required:
+      - id
+      - merchantId
+      example: null
+  securitySchemes:
+    Sandbox:
+      description: Sandbox OAuth2 client credentials flow
+      flows:
+        clientCredentials:
+          scopes:
+            order: Order deliveries
+            read: Get quotes and read information about deliveries
+          tokenUrl: https://auth.sandbox.evermile.io/oauth2/token
+      type: oauth2
+    Prod:
+      description: Production OAuth2 client credentials flow
+      flows:
+        clientCredentials:
+          scopes:
+            order: Order deliveries
+            read: Get quotes and read information about deliveries
+          tokenUrl: https://auth.prod.evermile.io/oauth2/token
+      type: oauth2
