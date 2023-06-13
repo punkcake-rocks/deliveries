@@ -88,14 +88,14 @@ func webhook(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
 
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "Error reading body", http.StatusInternalServerError)
+	if !ValidateWebhook(r) {
+		http.Error(w, "Error verifying webhook", http.StatusUnauthorized)
 		return
 	}
 
-	if !verifyWebhook(body, []byte(r.Header.Get("X-Shopify-Hmac-Sha256"))) {
-		http.Error(w, "Error verifying webhook", http.StatusUnauthorized)
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Error reading body", http.StatusInternalServerError)
 		return
 	}
 
@@ -108,8 +108,4 @@ func webhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// reqDump, _ := httputil.DumpRequest(r, true)
-
-	// fmt.Printf("REQUEST:\n%s", string(reqDump))
-	// w.Write([]byte("Hello World"))
 }

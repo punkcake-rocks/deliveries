@@ -1,23 +1,24 @@
 package main
 
 import (
-	"log"
+	"net/http"
 
 	goshopify "github.com/bold-commerce/go-shopify/v3"
 )
 
-func shopify() {
-	// Create an app somewhere.
-	app := goshopify.App{
-		ApiKey:   cfg.Shopify.ApiKey,
-		Password: cfg.Shopify.Password,
+var shopifyApp goshopify.App
+var shopifyClient *goshopify.Client
+
+func initShopify() {
+	shopifyApp = goshopify.App{
+		ApiKey:    cfg.Shopify.ApiKey,
+		Password:  cfg.Shopify.Password,
+		ApiSecret: cfg.Shopify.WebhookSignature,
 	}
 
-	// Create a new API client (notice the token parameter is the empty string)
-	client := goshopify.NewClient(app, cfg.Shopify.ShopName, cfg.Shopify.ApiToken)
+	shopifyClient = goshopify.NewClient(shopifyApp, cfg.Shopify.ShopName, cfg.Shopify.ApiToken)
+}
 
-	// Fetch the number of products.
-	numProducts, err := client.Order.Count(nil)
-	log.Println(numProducts)
-	log.Println(err)
+func ValidateWebhook(httpRequest *http.Request) bool {
+	return shopifyApp.VerifyWebhookRequest(httpRequest)
 }

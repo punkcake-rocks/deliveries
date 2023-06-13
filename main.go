@@ -34,7 +34,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println(cfg)
+
+	initShopify()
+
 	http.HandleFunc(("/webhook"), webhook)
 
 	fmt.Printf("Starting server at port 8080\n")
