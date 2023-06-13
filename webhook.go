@@ -12,33 +12,9 @@ import (
 	"regexp"
 	"strings"
 	"time"
-)
 
-type OrdersCreateBody struct {
-	Id              int64  `json:"id"`
-	Email           string `json:"email"`
-	FinancialStatus string `json:"financial_status"`
-	Note            string `json:"note"`
-	NoteAttributes  []struct {
-		Name  string `json:"name"`
-		Value string `json:"value"`
-	} `json:"note_attributes"`
-	OrderNumber     int64  `json:"order_number"`
-	Name            string `json:"name"`
-	Currency        string `json:"currency"`
-	SubTotalPrice   string `json:"subtotal_price"`
-	ShippingAddress struct {
-		Name     string `json:"name"`
-		Address1 string `json:"address1"`
-		Address2 string `json:"address2"`
-		City     string `json:"city"`
-		Company  string `json:"company"`
-		Country  string `json:"country"`
-		Phone    string `json:"phone"`
-		Zip      string `json:"zip"`
-	} `json:"shipping_address"`
-	DeliverBy time.Time `json:"deliver_by"`
-}
+	goshopify "github.com/bold-commerce/go-shopify/v3"
+)
 
 func verifyWebhook(data, hmacHeder []byte) bool {
 	mac := hmac.New(sha256.New, []byte(cfg.Shopify.WebhookSignature))
@@ -50,9 +26,9 @@ func verifyWebhook(data, hmacHeder []byte) bool {
 }
 
 func ordersCreate(w http.ResponseWriter, body []byte) {
-	var formData OrdersCreateBody
+	var order goshopify.Order
 
-	if err := json.Unmarshal(body, &formData); err != nil {
+	if err := json.Unmarshal(body, &order); err != nil {
 		http.Error(w, "Error parsing form", http.StatusInternalServerError)
 		return
 	}
@@ -60,32 +36,32 @@ func ordersCreate(w http.ResponseWriter, body []byte) {
 	var deliverByDate time.Time
 	var deliverByTime string
 
-	for _, v := range formData.NoteAttributes {
+	for _, noteAttribute := range order.NoteAttributes {
+		value := noteAttribute.Value.(string)
 
-		if v.Name == "Delivery-Date" {
-			deliverByDate, _ = time.Parse("2006/01/02", v.Value)
+		if noteAttribute.Name == "Delivery-Date" {
+			deliverByDate, _ = time.Parse("2006/01/02", value)
 		}
-		if v.Name == "Delivery-Time" {
-			if !validateDeliveryTime(v.Value) {
-				http.Error(w, fmt.Sprintf("Wrong format for delivery time: w%s ", v.Value), http.StatusUnprocessableEntity)
+		if noteAttribute.Name == "Delivery-Time" {
+			if !validateDeliveryTime(value) {
+				http.Error(w, fmt.Sprintf("Wrong format for delivery time: w%s ", value), http.StatusUnprocessableEntity)
 				return
 			} else {
-				deliverByTime = strings.Split(v.Value, " - ")[1]
+				deliverByTime = strings.Split(value, " - ")[1]
 			}
 		}
 	}
 
 	log.Println(deliverByTime)
 	if deliverByDate.IsZero() || deliverByTime == "" {
-		log.Println(fmt.Sprintf("#%d is a collection, skipping", formData.OrderNumber) + "")
+		log.Println(fmt.Sprintf("#%d is a collection, skipping", order.OrderNumber) + "")
 		return
 	}
 
 	location, _ := time.LoadLocation("Europe/London")
-	formData.DeliverBy, _ = time.ParseInLocation("2006/01/02 15:04", deliverByDate.Format("2006/01/02")+" "+deliverByTime, location)
+	deadline, _ := time.ParseInLocation("2006/01/02 15:04", deliverByDate.Format("2006/01/02")+" "+deliverByTime, location)
 
-	// fmt.Printf("FORM DATA: %+v \n", formData)
-	evermile(formData)
+	evermile(order, deadline)
 }
 
 func validateDeliveryTime(deliveryTime string) bool {

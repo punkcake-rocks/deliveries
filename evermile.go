@@ -9,6 +9,7 @@ import (
 	"time"
 
 	evermileApi "github.com/GIT_USER_ID/GIT_REPO_ID/EvermileClient"
+	goshopify "github.com/bold-commerce/go-shopify/v3"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
@@ -45,13 +46,13 @@ func setupApi(orderId int) (*evermileApi.APIClient, context.Context) {
 	return evermileApi.NewAPIClient(evermileApiConfig), ctx
 }
 
-func evermile(formData OrdersCreateBody) {
+func evermile(formData goshopify.Order, deadline time.Time) {
 
 	api, ctx := setupApi(int(formData.OrderNumber))
 
 	deliverySlot := evermileApi.NewDeliverySlot(
-		formData.DeliverBy.Add(time.Duration(-4)*time.Hour).UTC(),
-		formData.DeliverBy.UTC(),
+		deadline.Add(time.Duration(-4)*time.Hour).UTC(),
+		deadline.UTC(),
 	)
 
 	destinationLocations := []evermileApi.DestinationLocation{
@@ -71,15 +72,10 @@ func evermile(formData OrdersCreateBody) {
 		float32(1.5),
 		evermileApi.ParcelType(evermileApi.PARCELTYPE_PACKAGE),
 	)
-	subTotal, err := strconv.ParseFloat(formData.SubTotalPrice, 64)
 
-	if err != nil {
-		log.Println("Could not parse sub total price")
-		return
-	}
 	item := *evermileApi.NewItem(
 		"Cake",
-		*evermileApi.NewPrice(int64(subTotal*100), formData.Currency),
+		*evermileApi.NewPrice(int64(formData.SubtotalPrice.IntPart()*100), formData.Currency),
 		1,
 	)
 
@@ -143,14 +139,14 @@ func evermile(formData OrdersCreateBody) {
 	executeOrderRequest(api, ctx, proposal, formData)
 }
 
-func executeOrderRequest(api *evermileApi.APIClient, ctx context.Context, proposal evermileApi.Proposal, formData OrdersCreateBody) {
+func executeOrderRequest(api *evermileApi.APIClient, ctx context.Context, proposal evermileApi.Proposal, order goshopify.Order) {
 	contactDetails := *evermileApi.NewContactDetails(
-		formData.ShippingAddress.Name,
-		formData.Email,
+		order.ShippingAddress.Name,
+		order.Email,
 	)
-	contactDetails.ContactEmail = formData.Email
-	contactDetails.ContactPhone = &formData.ShippingAddress.Phone
-	contactDetails.Instructions = &formData.Note
+	contactDetails.ContactEmail = order.Email
+	contactDetails.ContactPhone = &order.ShippingAddress.Phone
+	contactDetails.Instructions = &order.Note
 
 	orderRequest := *evermileApi.NewOrderRequest(
 		proposal.GetId(),
@@ -158,7 +154,7 @@ func executeOrderRequest(api *evermileApi.APIClient, ctx context.Context, propos
 		true,
 	)
 	orderRequest.SetPickupLocationId(cfg.Evermile.DefaultLocation)
-	orderRequest.SetExternalOrderId(strconv.FormatInt(int64(formData.OrderNumber), 10))
+	orderRequest.SetExternalOrderId(strconv.FormatInt(int64(order.OrderNumber), 10))
 
 	resp, r, err := api.OrdersApi.OrderPost(ctx).OrderRequest(orderRequest).Execute()
 	if err != nil {
