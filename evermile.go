@@ -34,7 +34,7 @@ func getClientContext(ctx context.Context) context.Context {
 	return ctx
 }
 
-func setupApi(orderId int) (*evermileApi.APIClient, context.Context) {
+func setupApi() (*evermileApi.APIClient, context.Context) {
 	ctx := getClientContext(context.Background())
 
 	evermileApiConfig := evermileApi.NewConfiguration()
@@ -46,9 +46,9 @@ func setupApi(orderId int) (*evermileApi.APIClient, context.Context) {
 	return evermileApi.NewAPIClient(evermileApiConfig), ctx
 }
 
-func evermile(formData goshopify.Order, deadline time.Time) {
+func evermile(order goshopify.Order, deadline time.Time) {
 
-	api, ctx := setupApi(int(formData.OrderNumber))
+	api, ctx := setupApi()
 
 	deliverySlot := evermileApi.NewDeliverySlot(
 		deadline.Add(time.Duration(-4)*time.Hour).UTC(),
@@ -58,9 +58,9 @@ func evermile(formData goshopify.Order, deadline time.Time) {
 	destinationLocations := []evermileApi.DestinationLocation{
 		{
 			Address: &evermileApi.Address{
-				AddressLine1: formData.ShippingAddress.Address1,
-				City:         formData.ShippingAddress.City,
-				PostalCode:   formData.ShippingAddress.Zip,
+				AddressLine1: order.ShippingAddress.Address1,
+				City:         order.ShippingAddress.City,
+				PostalCode:   order.ShippingAddress.Zip,
 				Type:         evermileApi.ADDRESSTYPE_OFFICE,
 			},
 			DeliverySlot: deliverySlot,
@@ -75,7 +75,7 @@ func evermile(formData goshopify.Order, deadline time.Time) {
 
 	item := *evermileApi.NewItem(
 		"Cake",
-		*evermileApi.NewPrice(int64(formData.SubtotalPrice.IntPart()*100), formData.Currency),
+		*evermileApi.NewPrice(int64(order.SubtotalPrice.IntPart()*100), order.Currency),
 		1,
 	)
 
@@ -136,10 +136,21 @@ func evermile(formData goshopify.Order, deadline time.Time) {
 
 	log.Println(proposal)
 
-	executeOrderRequest(api, ctx, proposal, formData)
+	if executeOrderRequest(api, ctx, proposal, order) {
+		newOrder := goshopify.Order{
+			ID:   order.ID,
+			Tags: order.Tags + ", evermile",
+		}
+		_, err = shopifyClient.Order.Update(newOrder)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+	}
 }
 
-func executeOrderRequest(api *evermileApi.APIClient, ctx context.Context, proposal evermileApi.Proposal, order goshopify.Order) {
+func executeOrderRequest(api *evermileApi.APIClient, ctx context.Context, proposal evermileApi.Proposal, order goshopify.Order) bool {
 	contactDetails := *evermileApi.NewContactDetails(
 		order.ShippingAddress.Name,
 		order.Email,
@@ -160,7 +171,9 @@ func executeOrderRequest(api *evermileApi.APIClient, ctx context.Context, propos
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling `OrdersApi.OrderPost``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+		return false
 	}
 	// response from `OrderPost`: OrderResponse
 	fmt.Fprintf(os.Stdout, "Response from `OrdersApi.OrderPost`: %v\n", resp)
+	return true
 }
