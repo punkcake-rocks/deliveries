@@ -31,3 +31,6 @@ lint:
 
 build:
 	go build -o deliveries ./...
+
+emToken:
+	@echo -n ${EVERMILE_CLIENT_ID}:${EVERMILE_CLIENT_SECRET} | base64

@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -24,6 +25,7 @@ type OrdersCreateBody struct {
 	} `json:"note_attributes"`
 	OrderNumber     int64  `json:"order_number"`
 	Name            string `json:"name"`
+	Currency        string `json:"currency"`
 	SubTotalPrice   string `json:"subtotal_price"`
 	ShippingAddress struct {
 		Name     string `json:"name"`
@@ -64,10 +66,16 @@ func ordersCreate(w http.ResponseWriter, body []byte) {
 			deliverByDate, _ = time.Parse("2006/01/02", v.Value)
 		}
 		if v.Name == "Delivery-Time" {
-			deliverByTime = strings.Split(v.Value, " - ")[1]
+			if !validateDeliveryTime(v.Value) {
+				http.Error(w, fmt.Sprintf("Wrong format for delivery time: w%s ", v.Value), http.StatusUnprocessableEntity)
+				return
+			} else {
+				deliverByTime = strings.Split(v.Value, " - ")[1]
+			}
 		}
 	}
 
+	log.Println(deliverByTime)
 	if deliverByDate.IsZero() || deliverByTime == "" {
 		log.Println(fmt.Sprintf("#%d is a collection, skipping", formData.OrderNumber) + "")
 		return
@@ -76,9 +84,19 @@ func ordersCreate(w http.ResponseWriter, body []byte) {
 	location, _ := time.LoadLocation("Europe/London")
 	formData.DeliverBy, _ = time.ParseInLocation("2006/01/02 15:04", deliverByDate.Format("2006/01/02")+" "+deliverByTime, location)
 
-	evermile(formData)
 	// fmt.Printf("FORM DATA: %+v \n", formData)
+	evermile(formData)
+}
 
+func validateDeliveryTime(deliveryTime string) bool {
+	matched, err := regexp.Match(`\d{2}:\d{2} - \d{2}:\d{2}`, []byte(deliveryTime))
+
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+
+	return matched
 }
 
 func webhook(w http.ResponseWriter, r *http.Request) {
