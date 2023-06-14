@@ -11,6 +11,7 @@ func main() {
 
 	config()
 	initShopify()
+	initEvermile()
 
 	http.HandleFunc(("/webhook"), webhook)
 

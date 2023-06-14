@@ -13,6 +13,9 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 )
 
+var evermileClient *evermileApi.APIClient
+var evermileContext context.Context
+
 func getClientContext(ctx context.Context) context.Context {
 	apiSubdomain := cfg.Evermile.ApiSubdomain
 
@@ -34,8 +37,8 @@ func getClientContext(ctx context.Context) context.Context {
 	return ctx
 }
 
-func setupApi() (*evermileApi.APIClient, context.Context) {
-	ctx := getClientContext(context.Background())
+func initEvermile() {
+	evermileContext = getClientContext(context.Background())
 
 	evermileApiConfig := evermileApi.NewConfiguration()
 	// Replace merchant ID with your prod one for prod
@@ -43,12 +46,10 @@ func setupApi() (*evermileApi.APIClient, context.Context) {
 
 	evermileApiConfig.Debug = cfg.Evermile.Debug
 
-	return evermileApi.NewAPIClient(evermileApiConfig), ctx
+	evermileClient = evermileApi.NewAPIClient(evermileApiConfig)
 }
 
 func evermile(order goshopify.Order, deadline time.Time) {
-
-	api, ctx := setupApi()
 
 	deliverySlot := evermileApi.NewDeliverySlot(
 		deadline.Add(time.Duration(-4)*time.Hour).UTC(),
@@ -105,7 +106,7 @@ func evermile(order goshopify.Order, deadline time.Time) {
 	})
 	quoteReq.SetInstructions("Fragile! Handle with care!")
 
-	resp, r, err := api.QuotesApi.QuotePost(ctx).QuoteReq(quoteReq).Execute()
+	resp, r, err := evermileClient.QuotesApi.QuotePost(evermileContext).QuoteReq(quoteReq).Execute()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling `QuotesApi.QuotePost``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -136,10 +137,15 @@ func evermile(order goshopify.Order, deadline time.Time) {
 
 	log.Println(proposal)
 
-	if executeOrderRequest(api, ctx, proposal, order) {
+	evermileOrder, eoError := executeOrderRequest(proposal, order)
+	if eoError != nil {
 		newOrder := goshopify.Order{
 			ID:   order.ID,
 			Tags: order.Tags + ", evermile",
+			NoteAttributes: append(order.NoteAttributes, goshopify.NoteAttribute{
+				Name:  "evermile-order-id",
+				Value: evermileOrder.GetId(),
+			}),
 		}
 		_, err = shopifyClient.Order.Update(newOrder)
 		if err != nil {
@@ -150,7 +156,7 @@ func evermile(order goshopify.Order, deadline time.Time) {
 	}
 }
 
-func executeOrderRequest(api *evermileApi.APIClient, ctx context.Context, proposal evermileApi.Proposal, order goshopify.Order) bool {
+func executeOrderRequest(proposal evermileApi.Proposal, order goshopify.Order) (*evermileApi.OrderDetails, error) {
 	contactDetails := *evermileApi.NewContactDetails(
 		order.ShippingAddress.Name,
 		order.Email,
@@ -167,13 +173,14 @@ func executeOrderRequest(api *evermileApi.APIClient, ctx context.Context, propos
 	orderRequest.SetPickupLocationId(cfg.Evermile.DefaultLocation)
 	orderRequest.SetExternalOrderId(strconv.FormatInt(int64(order.OrderNumber), 10))
 
-	resp, r, err := api.OrdersApi.OrderPost(ctx).OrderRequest(orderRequest).Execute()
+	resp, r, err := evermileClient.OrdersApi.OrderPost(evermileContext).OrderRequest(orderRequest).Execute()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling `OrdersApi.OrderPost``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-		return false
+		return nil, err
 	}
 	// response from `OrderPost`: OrderResponse
-	fmt.Fprintf(os.Stdout, "Response from `OrdersApi.OrderPost`: %v\n", resp)
-	return true
+	// fmt.Fprintf(os.Stdout, "Response from `OrdersApi.OrderPost`: %v\n", resp)
+	return resp, nil
+}
 }
