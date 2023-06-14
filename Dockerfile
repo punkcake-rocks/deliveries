@@ -1,9 +1,20 @@
-FROM debian:stretch-slim
+FROM golang:1.20-buster as builder
 
-WORKDIR /
+WORKDIR /app
 
-RUN apt-get update && apt-get install -y ca-certificates
+# COPY go.* ./
 
-ADD bin /bin/
+COPY . ./
 
-CMD ["/bin/sh"]
+RUN go mod download
+
+RUN go build -v -o server
+
+FROM debian:buster-slim
+RUN set -x && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /app/server /app/server
+
+CMD ["/app/server"]
