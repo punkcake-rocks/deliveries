@@ -47,6 +47,8 @@ func initEvermile() {
 	evermileApiConfig.Debug = cfg.Evermile.Debug
 
 	evermileClient = evermileApi.NewAPIClient(evermileApiConfig)
+
+	// registerWebhooks()
 }
 
 func evermile(order goshopify.Order, deadline time.Time) {
@@ -183,4 +185,20 @@ func executeOrderRequest(proposal evermileApi.Proposal, order goshopify.Order) (
 	// fmt.Fprintf(os.Stdout, "Response from `OrdersApi.OrderPost`: %v\n", resp)
 	return resp, nil
 }
-}
+
+// func registerWebhooks() {
+// 	// get all webhooks
+
+// 	getWebhooksForTopic(evermileApi.WEBHOOKTOPIC_ORDER_CREATED)
+// }
+
+// func getWebhooksForTopic(topic evermileApi.WebhookTopic) {
+// 	resp, r, err := evermileClient.WebhooksApi.WebhookGet(evermileContext).XEVERMILEAUTHHEADER("PUNKCAKE_AUTH_HEADER").XEVERMILEWEBHOOKTOPIC(topic).Execute()
+// 	if err != nil {
+// 		fmt.Fprintf(os.Stderr, "Error when calling `WebhooksApi.WebhookGet``: %v\n", err)
+// 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+// 		return
+// 	}
+// 	// response from `WebhookGet`: []Webhook
+// 	fmt.Fprintf(os.Stdout, "Response from `WebhooksApi.WebhookGet`: %v\n", resp)
+// }
